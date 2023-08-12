@@ -30,6 +30,14 @@ def resample(data, orig_sr, target_sr):
 def table_with_sound(dframe, audio_column='audio_column', columns=[], pred=False):
     """
         Helper function for show dataframe with audio-play column
+
+        inpus:
+            -dframe: Datarow con audio name, audio path y duration
+            -audio_column: Columna donde se encuentra el audio
+            -columns: Nombre de las columnas de dframe
+
+        output:
+            -Archivo HTML que permite escuchar el audio
     """
 
     def path_to_sound_html(sound):
