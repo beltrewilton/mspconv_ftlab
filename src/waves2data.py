@@ -30,3 +30,4 @@ for a in AUDIO_PATH.rglob("*.wav"):
 
 with open('../data/audiolist.pkl', "wb") as pkl:
     pickle.dump(audios, pkl)
+

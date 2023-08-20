@@ -11,6 +11,26 @@ import IPython
 from IPython.display import HTML, display
 
 
+def quantization(bits: int = 8):
+    """Quantization sexample"""
+    f16vector = np.array([1.2, -0.5, -4.3, 1.2, -3.1, 0.8, 2.4, 5.4], dtype=np.float16)
+    int8_range = 2**(bits - 1) - 1
+    absmax = np.max(f16vector)
+    sfactor = int8_range / absmax
+    q_vector = np.round(f16vector * sfactor).astype(np.int8)
+    back_vector = q_vector / sfactor
+    print(f'Simple {bits} Quantization \n')
+    print('Input vector:')
+    print(f16vector)
+    print('- - - - - - - - - - - - - - - - - -- \n')
+    print('Quantized vector:')
+    print(q_vector)
+    print('- - - - - - - - - - - - - - - - - -- \n')
+    print('Recovered vector:')
+    print(back_vector)
+    print('- - - - - - - - - - - - - - - - - -- \n')
+
+
 def stereo_to_mono(data):
     """Convert stereo audio to mono by averaging the samples"""
     mono_audio = np.mean(data, axis=1, dtype=data.dtype)
