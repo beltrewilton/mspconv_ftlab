@@ -1,3 +1,7 @@
+"""
+    Genera el archivo audiolist.pkl en la carpeta data con las columnas ['Audio_Name', 'Audio_Path', 'Duration']
+"""
+
 import os
 import sys
 from pathlib import Path
@@ -9,10 +13,10 @@ import pandas as pd
 import numpy as np
 import scipy.signal as signal
 from scipy.io import wavfile
-from src.futil import stereo_to_mono, resample
+from futil import stereo_to_mono, resample
 
-
-root_path = "/Users/beltre.wilton/Downloads/SER-Datasets/MSP-Conversation-1.1"
+# Link a la carpeta donde se encuentran todos los archivos del MSP corpus
+root_path = "C:/Users/Emanuel/Documents/Github/MSP corpus"
 AUDIO_PATH = Path(f'{root_path}/Audio')
 
 audios = []
