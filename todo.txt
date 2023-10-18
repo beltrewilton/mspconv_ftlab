@@ -1,0 +1,1 @@
+1- Explorar las diferentes formas de obtener la data de un audio (Actualmente se usa librosa).

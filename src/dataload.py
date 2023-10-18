@@ -1,4 +1,29 @@
 import pandas as pd
+import numpy as np
+import librosa
+
+def load_audio_data(df_annotations: pd.DataFrame, pc_num: int, part_num: int) -> (np.ndarray, int):
+
+    """
+        Inputs:
+            -df_annotations: Dataset annotations directory. For every file contains contains a row with the name, emotion, annotator, podcast part and number.
+            -pc_num: PodCast Number
+            -part_num: Part 
+
+        Output:
+            1- A numpy array with the audio time series
+            2- Integer sampling rate
+    """
+    
+    df_part_data = df_annotations[(df_annotations['PC_Num'] == pc_num) & (df_annotations['Part_Num'] == part_num)].reset_index()
+
+    audio_name = df_part_data['Audio_Name'][0]
+    start_time = df_part_data['start_time'][0]
+    end_time = df_part_data['end_time'][0]
+
+    audio_path = "data/MSPCORPUS/Audio/" + audio_name
+
+    return librosa.load(audio_path, offset = start_time, duration = end_time - start_time)
 
 def audio_select_mean_vote(df_annotations: pd.DataFrame, pc_num: int, part_num: int) -> pd.DataFrame:
 
