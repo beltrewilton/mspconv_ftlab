@@ -1,1 +1,4 @@
 1- Explorar las diferentes formas de obtener la data de un audio (Actualmente se usa librosa).
+2- Mappging VAD to categorical emotions
+3- Explorar emotion models (Ekman,  Plutchik's Wheel of Emotions,  Geneva Emotion Wheel)
+4- Reproducir un audio segmentado (Audio - Segmented Reproduction)
