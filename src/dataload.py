@@ -41,7 +41,7 @@ def load_audio_data(df_annotations: pd.DataFrame, pc_num: int, part_num: int) ->
 
     audio_path = "data/MSPCORPUS/Audio/" + audio_name
 
-    return librosa.load(audio_path, offset = start_time, duration = end_time - start_time)
+    return librosa.load(audio_path, offset = start_time, duration = end_time - start_time, sr = None)
 
 def audio_select_mean_vote(df_annotations: pd.DataFrame, pc_num: int, part_num: int) -> pd.DataFrame:
 
