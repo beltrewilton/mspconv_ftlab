@@ -2,7 +2,7 @@
 2- Mappging VAD to categorical emotions (Código de mapeo de Wilton)
 3- Explorar emotion models (Ekman,  Plutchik's Wheel of Emotions,  Geneva Emotion Wheel)
 4- Reproducir un audio segmentado (Audio - Segmented Reproduction)
-5- Re revisar a profundidad el tema start time (Ema)
+5- Re revisar a profundidad el tema start time (Ema)                                                                [COMPLETADO]
 6- Ver como minimizar cantidad de datapoints en el target (estilo drop duplicates) (IMPORTANTE Y PROBLEMATICO)
 7- Estudiar distintas funciones de votación para las emociones
 8- Transcripciones para NLP (Recomendacion de Rodrigo) (Código de transcripcion de Paulo)
