@@ -6,3 +6,4 @@
 6- Ver como minimizar cantidad de datapoints en el target (estilo drop duplicates) (IMPORTANTE Y PROBLEMATICO)
 7- Estudiar distintas funciones de votación para las emociones
 8- Transcripciones para NLP (Recomendacion de Rodrigo) (Código de transcripcion de Paulo)
+9- Estudiar openSmile
