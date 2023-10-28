@@ -10,7 +10,7 @@ def ekman_emotion(valence : float, arousal : float, dominance : float) -> str:
 
     # Calculate the Euclidean distance from the VAD values to each emotion's threshold
     for emotion, (v_thresh, a_thresh, d_thresh) in ekmans_thresholds.items():
-        distance = ((valence - v_thresh) ** 2 + (arousal - a_thresh) ** 2 + (dominance - d_thresh) ** 2) ** 0.5 
+        distance = (((valence / 100) - v_thresh) ** 2 + ((arousal / 100) - a_thresh) ** 2 + ((dominance / 100) - d_thresh) ** 2) ** 0.5 
         
         # Update the best emotion if the current emotion is closer
         if distance < min_distance:
@@ -18,7 +18,6 @@ def ekman_emotion(valence : float, arousal : float, dominance : float) -> str:
             min_distance = distance 
     
     return best_emotion
-
 
 def load_audio_data(df_annotations: pd.DataFrame, pc_num: int, part_num: int) -> (np.ndarray, int):
 
@@ -41,7 +40,11 @@ def load_audio_data(df_annotations: pd.DataFrame, pc_num: int, part_num: int) ->
 
     audio_path = "data/MSPCORPUS/Audio/" + audio_name
 
-    return librosa.load(audio_path, offset = start_time, duration = end_time - start_time, sr = None)
+    data, sr = librosa.load(audio_path, offset = start_time, duration = end_time - start_time, sr = None)
+
+    time = np.arange(0, len(data)) * (1.0 / sr)
+
+    return data, time
 
 def audio_select_mean_vote(df_annotations: pd.DataFrame, pc_num: int, part_num: int) -> pd.DataFrame:
 
@@ -80,4 +83,4 @@ def audio_select_mean_vote(df_annotations: pd.DataFrame, pc_num: int, part_num: 
     df_emotions_vote = pd.DataFrame(votation_means.pivot_table(columns = 'Emotion', index = 'Time', values = 'Vote').to_records()).set_index('Time')
     df_emotions_vote = df_emotions_vote.fillna(method='ffill')
     
-    return df_emotions_vote.reset_index()
+    return df_emotions_vote.reset_index()[['Time','Valence','Arousal','Dominance']]
