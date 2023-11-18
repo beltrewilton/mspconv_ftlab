@@ -4,7 +4,8 @@
 4- Reproducir un audio segmentado (Audio - Segmented Reproduction)
 5- Re revisar a profundidad el tema start time (***EMA***)                                                          [COMPLETADO]
 6- Ver como minimizar cantidad de datapoints en el target (estilo drop duplicates) (IMPORTANTE Y PROBLEMATICO)
-7- Estudiar distintas funciones de votación para las emociones (weigthed mean avg o avg simple u otra opción)
+7- Estudiar distintas funciones de votación para las emociones (weigthed mean avg o avg simple u otra opción) (***WILTON***)  
 8- Transcripciones para NLP (Recomendacion de Rodrigo) (Código de transcripcion de Paulo)
 9- Estudiar openSmile
 10- Estudiar modelos de Hugginface (***WILTON***)                                                                   [PROGRESS]
+11- Investigar como usar audios separados por persona que habla
