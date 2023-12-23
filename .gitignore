@@ -13,3 +13,4 @@ MODELS
 sandbox.ipynb
 config.json
 audio.*
+/data/mspconvs.pkl
