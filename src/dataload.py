@@ -212,6 +212,9 @@ def build_mspconvs(df_annotations: pd.DataFrame, df_reduced: pd.DataFrame, pc_nu
     if pc_num != -1 and part_num != -1:
         df_reduced = df_reduced[(df_reduced.PC_Num == pc_num) & (df_reduced.Part_Num == part_num)]
     mspconvs = {}
+    print('-----------------------------')
+    print(f"MSP Conversation parts: {len(df_reduced)}")
+    print('-----------------------------\n')
     for idx, row in tqdm(df_reduced.iterrows(), desc=f"Procesando 🚧, tome un café ☕️ y espere ⏳...", total=len(df_reduced), ncols=120):
         emotions = ['Valence', 'Arousal', 'Dominance']
         for emotion in emotions:
@@ -226,6 +229,7 @@ def build_mspconvs(df_annotations: pd.DataFrame, df_reduced: pd.DataFrame, pc_nu
             annotations.append(df_wavg)
 
             mspconvs[key] = {
+                'key': key,                         # str: la referencia en si misma
                 'raters': raters,                   # ndarray: (6 anotadores, X annotations points de longitud estandarizada)
                 'annolist': annolist,               # ndarray: (6 label anotadores)
                 'time': df_pivot.index.to_numpy(),  # ndarray: (representa el tiempo de cada annotations points estandarizada)
@@ -308,6 +312,7 @@ def save_mspconvs(mspconvs: dict):
     with open(f'../data/{MSP_PKL_FILE}', "wb") as pkl:
         pickle.dump(mspconvs, pkl)
 
+
 def play():
     # key ="197_1_Valence"
     # mspconv = mspconvs[key]
@@ -345,10 +350,38 @@ def play():
     with open(f"../data/{MSP_PKL_FILE}", "rb") as pkl:
         mspconv_from_disk = pickle.load(pkl)
 
-    key = "197_3_Dominance"
-    mspconv_from_disk = mspconv_from_disk[key]
-    sample_scatter(mspconv_from_disk, key)
-    sample_heatmap(mspconv_from_disk, key)
+    print(len(mspconv_from_disk.keys()))
+
+    # for key, _msp_conv in mspconv_from_disk.items():
+    #     for annotation in _msp_conv['annotations']:
+    #         if annotation.Time.max() > 500:
+    #             idx = annotation.Time.argmax()
+    #             print(f"Annotator: {annotation.Annotator.iloc[idx]}\tpoint: {annotation.Annotation.iloc[idx]}\tkey: {key}\tTime: {annotation.Time.max()}")
+
+    reps_score = {}
+    for key, _msp_conv in mspconv_from_disk.items():
+        for k, s in _msp_conv['reps_score'].items():
+            a = reps_score.get(k, np.array([]))
+            reps_score[k] = np.append(a, s)
+
+    for annotator, arr in reps_score.items():
+        print(f"Anotador: {annotator}, Mean: {arr.mean()}, Std: {arr.std()}, Sum: {arr.sum()}, Participación: {arr.shape[0]}")
+
+
+
+    # key = "197_1_Dominance"
+    # _mspconv = mspconv_from_disk[key]
+    # sample_scatter(_mspconv, key)
+    #
+    # key = "197_2_Dominance"
+    # _mspconv = mspconv_from_disk[key]
+    # sample_scatter(_mspconv, key)
+    #
+    # key = "197_3_Dominance"
+    # _mspconv = mspconv_from_disk[key]
+    # sample_scatter(_mspconv, key)
+
+    # sample_heatmap(mspconv_from_disk, key)
 
 
 if __name__ == "__main__":
@@ -364,5 +397,8 @@ if __name__ == "__main__":
     #TODO: BIG NEXT is also split audio by 30 seconds
 
     save_mspconvs(mspconvs)
+
+    # play()
+
 
     print('Fin de proceso ⛱️.')
