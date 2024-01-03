@@ -9,4 +9,4 @@
 9- Estudiar muy poco openSmile                                                                                          (***EMA***)     [PROGRESS]
 10- Estudiar modelos de Hugginface                                                                                      (***WILTON***)  [PROGRESS]
 11- Investigar como usar audios separados por persona que habla
-12- Usar balance cooncordation correlation index en vez de ekman                                                        (***PAULO***)
+12- Usar balance cooncordation correlation index en vez de ekman                                                        (***PAULO***)   [COMPLETADO]
