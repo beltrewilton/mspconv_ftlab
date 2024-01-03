@@ -318,6 +318,36 @@ def save_mspconvs(mspconvs: dict):
         pickle.dump(mspconvs, pkl)
 
 
+def get_wadf(key: str = ""):
+    """
+    Para sacar un dict con el WA
+    :param key: si lo mandas un key entonces retorna el dict completo
+    :return:
+    """
+    wadf = {}
+    try:
+        with open(f"../data/wadf.pkl", "rb") as pkl:
+            wadf = pickle.load(pkl)
+    except Exception as ex:
+        mspconv_from_disk = {}
+        with open(f"../data/{MSP_PKL_FILE}", "rb") as pkl:
+            mspconv_from_disk = pickle.load(pkl)
+        for k in mspconv_from_disk.keys():
+            _mspconv = mspconv_from_disk[k]
+            for purge in ["raters", "ck_score", "reps_score", "reps_scaled"]:
+                _mspconv.pop(purge, None)
+            df = _mspconv['annotations'][6] # WA dataframe
+            wadf[k] = df
+        del mspconv_from_disk
+        with open(f'../data/wadf.pkl', "wb") as pkl:
+            pickle.dump(wadf, pkl)
+
+    return wadf if key == "" else wadf[key]
+
+
+
+
+
 def play():
     # key ="197_1_Valence"
     # mspconv = mspconvs[key]
@@ -355,7 +385,10 @@ def play():
     with open(f"../data/{MSP_PKL_FILE}", "rb") as pkl:
         mspconv_from_disk = pickle.load(pkl)
 
-    print(len(mspconv_from_disk.keys()))
+    # print(len(mspconv_from_disk.keys()))
+
+    wadf = get_wadf('197_3_Arousal')
+    print()
 
     # for key, _msp_conv in mspconv_from_disk.items():
     #     for annotation in _msp_conv['annotations']:
@@ -390,11 +423,11 @@ def play():
 
 
 if __name__ == "__main__":
-    df_annotations, df_reduced = get_annotated_data()
+    # df_annotations, df_reduced = get_annotated_data()
     ####### mspconvs = build_mspconvs(df_annotations, df_reduced, pc_num=1701, part_num=1)
     ####### df_reduced = df_reduced.iloc[101:119]
     # df_reduced = df_reduced.iloc[101:111]
-    mspconvs = build_mspconvs(df_annotations, df_reduced)
+    # mspconvs = build_mspconvs(df_annotations, df_reduced)
 
     #TODO: rethink names of variables and method
     #TODO: solucionar que el audio play solo anda con la parte # 1 del audio
@@ -402,9 +435,9 @@ if __name__ == "__main__":
     #TODO: BIG NEXT is according with conclusion from EDA try to reduce the size by quality choose
     #TODO: BIG NEXT is also split audio by 30 seconds
 
-    save_mspconvs(mspconvs)
+    # save_mspconvs(mspconvs)
 
-    # play()
+    play()
 
 
     print('Fin de proceso ⛱️.')
