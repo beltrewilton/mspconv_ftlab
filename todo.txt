@@ -1,5 +1,6 @@
 1- Explorar las diferentes formas de obtener la data de un audio (Actualmente se usa librosa).                          (***PAULO***)
 2- Mappging VAD to categorical emotions                                                                                 (***WILTON***)  [PROGRESS]
+<<<<<<< Updated upstream
 3- Explorar emotion models (Ekman,  Plutchik's Wheel of Emotions,  Geneva Emotion Wheel)                                (***PAULO***)
 4- Reproducción dinámica y segmentada de audios (Audio - Segmented Reproduction)                                        (***EMA***)
 5- Re revisar a profundidad el tema start time                                                                          (***EMA***)     [COMPLETADO]
@@ -10,3 +11,6 @@
 10- Estudiar modelos de Hugginface                                                                                      (***WILTON***)  [PROGRESS]
 11- Investigar como usar audios separados por persona que habla
 12- Usar balance cooncordation correlation index en vez de ekman                                                        (***PAULO***)   [COMPLETADO]
+=======
+3- Explorar emotion models (Ekman,  Plutchik's Wheel of Emotions,  Geneva Emotion Wheel)                                (***PAULO***)
+>>>>>>> Stashed changes
