@@ -276,6 +276,11 @@ def sample_scatter(mspconv: dict, key: str):
         static_colors = [f'rgba(250, 165, 105, {opacity})', f'rgba(179, 168, 20 ,{opacity})',
                          f'rgba(85, 161, 14 ,{opacity})', f'rgba(10, 199, 67 ,{opacity})',
                          f'rgba(9, 128, 184 ,{opacity})', f'rgba(108, 9, 184 ,{opacity})', ]
+
+        static_colors = [f'rgba(0, 0, 255, {opacity})', f'rgba(0, 255, 0, {opacity})',
+                         f'rgba(255, 165, 0,{opacity})', f'rgba(128, 0, 128 ,{opacity})',
+                         f'rgba(0, 0, 0 ,{opacity})', f'rgba(0, 128, 128 ,{opacity})', ]
+
         return static_colors
 
     fig = go.Figure()
@@ -283,12 +288,12 @@ def sample_scatter(mspconv: dict, key: str):
     reps_score = mspconv['reps_score']
     for i, annotation in enumerate(annotations):
         label = str(annotation.Annotator.iloc[0])
-        opacity = 0.8
+        opacity = 0.9
         if label == WEIGHT_AVG_LABEL:
             fig.add_scatter(x=annotation.Time, y=annotation.Annotation, line=dict(color='rgba(217, 9, 92, 1)'))
         else:
             label = f"{label} \t{np.round(reps_score[label], 4)}"
-            opacity = 0.3
+            opacity = 0.4
             fig.add_scatter(x=annotation.Time, y=annotation.Annotation, line=dict(color=scolor(opacity)[i]))
         fig.data[i].name = label
 
@@ -301,7 +306,7 @@ def sample_scatter(mspconv: dict, key: str):
     fig.update_layout(
         xaxis_title="Time (seconds)", yaxis_title="Ratings",
         margin=dict(l=0, r=0, t=50, b=0),
-        autosize=False, width=1600, height=500,
+        autosize=False, width=1300, height=500,
         title_text=f'Annotations on MSP-Conversation_{key}', title_x=0.5,
     )
 
@@ -377,11 +382,11 @@ def play():
     # _mspconv = mspconv_from_disk[key]
     # sample_scatter(_mspconv, key)
     #
-    # key = "197_3_Dominance"
-    # _mspconv = mspconv_from_disk[key]
-    # sample_scatter(_mspconv, key)
+    key = "197_1_Arousal"
+    _mspconv = mspconv_from_disk[key]
+    sample_scatter(_mspconv, key)
 
-    # sample_heatmap(mspconv_from_disk, key)
+    # sample_heatmap(_mspconv, key)
 
 
 if __name__ == "__main__":
@@ -392,6 +397,7 @@ if __name__ == "__main__":
     mspconvs = build_mspconvs(df_annotations, df_reduced)
 
     #TODO: rethink names of variables and method
+    #TODO: solucionar que el audio play solo anda con la parte # 1 del audio
     #TODO: EDA with this data/rates/etc
     #TODO: BIG NEXT is according with conclusion from EDA try to reduce the size by quality choose
     #TODO: BIG NEXT is also split audio by 30 seconds
