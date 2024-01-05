@@ -423,11 +423,8 @@ def play():
 
 
 if __name__ == "__main__":
-    # df_annotations, df_reduced = get_annotated_data()
-    ####### mspconvs = build_mspconvs(df_annotations, df_reduced, pc_num=1701, part_num=1)
-    ####### df_reduced = df_reduced.iloc[101:119]
-    # df_reduced = df_reduced.iloc[101:111]
-    # mspconvs = build_mspconvs(df_annotations, df_reduced)
+    df_annotations, df_reduced = get_annotated_data()
+    mspconvs = build_mspconvs(df_annotations, df_reduced)
 
     #TODO: rethink names of variables and method
     #TODO: solucionar que el audio play solo anda con la parte # 1 del audio
@@ -435,9 +432,9 @@ if __name__ == "__main__":
     #TODO: BIG NEXT is according with conclusion from EDA try to reduce the size by quality choose
     #TODO: BIG NEXT is also split audio by 30 seconds
 
-    # save_mspconvs(mspconvs)
+    save_mspconvs(mspconvs)
 
-    play()
+    # play()
 
 
     print('Fin de proceso ⛱️.')
