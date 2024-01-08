@@ -15,6 +15,9 @@ import plotly.graph_objects as go
 import pickle
 from plotly.subplots import make_subplots
 from tqdm import tqdm
+from pydub import AudioSegment
+import base64
+from vad.vad_lab import VAD
 
 
 ##### constant !
@@ -187,7 +190,7 @@ def score_scaler(annolist, data) -> (dict, np.ndarray):
 def calc_weighted_avg(df, reps_scaled) -> pd.DataFrame:
     """
     agraga un lindo dataframe al "pivot" con el weighted average,
-    es decir, queremos una traza con mayor concordancia de los anotadores
+    es decir, queremos una traza con la mejor concordancia entre los anotadores
     :param df:
     :param reps_scaled:
     :return:
@@ -345,6 +348,241 @@ def get_wadf(key: str = ""):
     return wadf if key == "" else wadf[key]
 
 
+def get_wa(pc_num: int, part_num: int,) -> (dict, dict):
+    """
+    Esta es una version NO DEFINITIVA para sacar el WA dado un pc_num y una part_num
+    TODO: Se debe encontrar una forma efectiva ya que en esta func ajusta el tamano de los datapoints del WA al de menor numero de datapoints.
+    :param pc_num:
+    :param part_num:
+    :return:
+    """
+    emotions = ['Valence', 'Arousal', 'Dominance']
+    wadf = get_wadf()
+    vad_mapping = VAD(minmax=[-100, 100], mapping="Russell_Mehrabian")
+    wa = {}
+    for emotion in emotions:
+        key = f"{pc_num}_{part_num}_{emotion}"
+        wa[emotion] = [wadf[key]['Annotation'].fillna(0).to_numpy(), wadf[key]['Time'].fillna(0).to_numpy()]
+    mi = np.argmin([wa['Valence'][0].shape[0], wa['Arousal'][0].shape[0], wa['Dominance'][0].shape[0], ])
+    threshold = wa[emotions[mi]][0].shape[0]
+    for emotion in emotions:
+        wa[emotion][0] = wa[emotion][0][:threshold]
+        wa[emotion][1] = wa[emotion][1][:threshold]
+
+    c = 0
+    wa['categorical'] = []
+    for v, a, d in zip (wa['Valence'][0], wa['Arousal'][0], wa['Dominance'][0]):
+        # c += 1
+        # if c == 40000:
+        #     print()
+        r = vad_mapping.vad2categorical(v, a, d, k=1)
+        wa['categorical'].append({'term': r[0][0]['term'], 'closest': r[0][0]['closest']})
+
+    timed_terms = {}
+    for k, t in enumerate(wa['Arousal'][1]):
+        timed_terms[np.around(t, 1)] = wa['categorical'][k]
+
+    return wa, timed_terms
+
+
+def read_wav_segment_to_base64(file_path, start_time_ms, end_time_ms):
+    # Load the WAV file
+    audio = AudioSegment.from_file(file_path, format="wav")
+
+    # Extract the specified segment
+    segment = audio[start_time_ms:end_time_ms]
+
+    # Convert the segment to base64
+    segment_bytes = segment.export(format="wav").read()
+    base64_encoded = base64.b64encode(segment_bytes).decode("utf-8")
+
+    return base64_encoded
+
+###############################    AUDIO VIZ COMPONENT    ###############################
+############################### Setting up plotly.js URL  #################################
+plotly_lib_url = "https://cdn.plot.ly/plotly-2.25.2.min.js"
+wavesurfer_lib_url = "https://cdnjs.cloudflare.com/ajax/libs/wavesurfer.js/2.0.4/wavesurfer.min.js"
+
+audio_viz_js = """
+function audio_viz(div_id, data){    
+  var valence = {
+    x: data.Time,
+    y: data.Valence,
+    type: 'scatter',
+    name: 'Valence',
+  };
+
+  var arousal = {
+    x: data.Time,
+    y: data.Arousal,
+    type: 'scatter',
+    name: 'Arousal',
+  };
+
+  var dominance = {
+    x: data.Time,
+    y: data.Dominance,
+    type: 'scatter',
+    name: 'Dominance',
+  };
+
+  var traces = [valence, arousal, dominance];
+
+  var layout = {
+    shapes: [{
+      type: 'line',
+      x0: 100,
+      y0: 0,
+      x1: 100,
+      yref: 'paper',
+      y1: 1,
+      line: {
+        color: 'grey',
+        width: 1.5,
+        dash: 'dot'
+      },
+      label: {
+          text: ' ',
+          textangle: 0,
+          textposition: 'end',
+          font: {
+              color: '#9195f2',
+              size: 14,
+          },
+      },
+    }],
+    title: `Audio VAD to Categ Viz @ MSP-Conversation_${data.PC_Num}_${data.Part_Num}`,
+    showlegend: true,
+  };
+
+  nid = document.querySelector(div_id);
+  Plotly.newPlot(nid, traces, layout);
+
+  const container = document.createElement("div");
+  container.style.width = "1090px";
+  container.style.marginLeft = "80px";
+  container.id = "waveform";
+  nid.appendChild(container);
+
+  var wavesurfer = WaveSurfer.create({
+    container: '#waveform',
+    waveColor: "#9195f2",
+    progressColor: "#c7c7c7",
+    cursorColor: "#ea8b3e",
+    cursorWidth: 2,
+    barWidth: 3,
+    barRadius: 30,
+  });
+
+  function round_f(num) {
+      return Math.round((num + Number.EPSILON) * 10) / 10;
+  }
+
+  function refresh(position) {
+    var num = round_f(position)
+    // console.log(data.timed_terms[num.toString()]);
+    var term = data.timed_terms[num.toString()]
+    nid.layout.shapes[0].x0 = position;
+    nid.layout.shapes[0].x1 = position;
+    if (term) {
+        nid.layout.shapes[0].label.text = `🤔 ${term.term} ${round_f(term.closest)}`
+    }
+    Plotly.redraw(nid);
+  }
+
+  const button = document.createElement("input");
+  button.type = "button";
+  button.value = "> play";
+  button.style.paddingLeft = "80px";
+  button.style.marginLeft = "80px";
+  nid.appendChild(button)
+
+  const indicator = document.createElement("div");
+  indicator.class = "waveform-time-indicator";
+  const time = document.createElement("span");
+  time.innerHTML = "00:00:00";
+  time.style.paddingLeft = "80px";
+  time.class = "time";
+  indicator.appendChild(time);
+  nid.appendChild(indicator);  
+
+  function base64ToArrayBuffer(base64) {
+    var binaryString = atob(base64);
+    var bytes = new Uint8Array(binaryString.length);
+    for (var i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes.buffer;
+  }
+
+  const arrBuffAudio = base64ToArrayBuffer(data.audio);
+  wavesurfer.loadArrayBuffer(arrBuffAudio);
+
+  function playPause() {
+    wavesurfer.playPause();
+    if (wavesurfer.isPlaying()) {
+        button.value = "!! pause";
+    } else {
+        button.value = "> play";
+    }
+  }
+
+  button.addEventListener("click", playPause);
+
+  function secondsToTimestamp(seconds) {
+    seconds = Math.floor(seconds);
+    var h = Math.floor(seconds / 3600);
+    var m = Math.floor((seconds - (h * 3600)) / 60);
+    var s = seconds - (h * 3600) - (m * 60);
+
+    h = h < 10 ? '0' + h : h;
+    m = m < 10 ? '0' + m : m;
+    s = s < 10 ? '0' + s : s;
+
+    return h + ':' + m + ':' + s;
+  }
+
+  function updateTimer() {
+    var formattedTime = secondsToTimestamp(wavesurfer.getCurrentTime());
+    time.innerHTML = formattedTime;
+    const currentpos = wavesurfer.getCurrentTime();
+    refresh(currentpos);
+  }
+
+  wavesurfer.on('ready', updateTimer)
+  wavesurfer.on('audioprocess', updateTimer)
+  wavesurfer.on('seek', updateTimer)
+
+}
+"""
+
+
+def audio_viz(wa: dict, pc_num: int, part_num: int, timed_terms: dict):
+    # Code execution using notebookjs
+    from notebookjs import execute_js
+    import json
+    import base64
+
+    emotion = 'Valence' #use for TIME reference
+
+    audio = f"/Users/beltre.wilton/Downloads/SER-Datasets/MSP-Conversation-1.1/Audio/MSP-Conversation_{str(pc_num).zfill(4)}.wav"
+    # Solo impl para la primera parte del audio, por ahora.
+    start_time = 0.0 * 1000
+    end_time = int(wa[emotion][1][-1]) * 1000
+
+    # Read the WAV segment and convert to base64
+    encode_string = read_wav_segment_to_base64(audio, start_time, end_time)
+
+    execute_js([plotly_lib_url, wavesurfer_lib_url, audio_viz_js], "audio_viz", {
+        "Valence": wa['Valence'][0].tolist(),
+        "Arousal": wa['Arousal'][0].tolist(),
+        "Dominance": wa['Dominance'][0].tolist(),
+        "Time": wa[emotion][1].tolist(),
+        "audio": encode_string,
+        "PC_Num": str(pc_num).zfill(4),
+        "Part_Num": part_num,
+        "timed_terms": timed_terms,
+    })
 
 
 
@@ -382,12 +620,15 @@ def play():
     # sample_scatter(mspconv, key)
 
     mspconv_from_disk = {}
-    with open(f"../data/{MSP_PKL_FILE}", "rb") as pkl:
-        mspconv_from_disk = pickle.load(pkl)
+    # with open(f"../data/{MSP_PKL_FILE}", "rb") as pkl:
+    #     mspconv_from_disk = pickle.load(pkl)
+
+    wadict = get_wa(197, 1)
 
     # print(len(mspconv_from_disk.keys()))
 
-    wadf = get_wadf('197_3_Arousal')
+    # wadf = get_wadf('197_1_Arousal')
+    audio_viz(wadict, pc_num=197, part_num=1, emotion='Arousal')
     print()
 
     # for key, _msp_conv in mspconv_from_disk.items():
@@ -423,18 +664,18 @@ def play():
 
 
 if __name__ == "__main__":
-    df_annotations, df_reduced = get_annotated_data()
-    mspconvs = build_mspconvs(df_annotations, df_reduced)
-
+    # df_annotations, df_reduced = get_annotated_data()
+    # mspconvs = build_mspconvs(df_annotations, df_reduced)
+    #
     #TODO: rethink names of variables and method
     #TODO: solucionar que el audio play solo anda con la parte # 1 del audio
     #TODO: EDA with this data/rates/etc
     #TODO: BIG NEXT is according with conclusion from EDA try to reduce the size by quality choose
     #TODO: BIG NEXT is also split audio by 30 seconds
 
-    save_mspconvs(mspconvs)
+    # save_mspconvs(mspconvs)
 
-    # play()
+    play()
 
 
     print('Fin de proceso ⛱️.')
