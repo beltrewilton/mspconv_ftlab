@@ -15,3 +15,4 @@ sandbox.ipynb
 config.json
 audio.*
 /data/mspconvs.pkl
+data/wadf.pkl
