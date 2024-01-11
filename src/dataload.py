@@ -17,27 +17,28 @@ from plotly.subplots import make_subplots
 from tqdm import tqdm
 from pydub import AudioSegment
 import base64
-from vad.vad_lab import VAD
+#from vad.vad_lab import VAD
 
 
 ##### constant !
 WEIGHT_AVG_LABEL = 'WAvg'
 MSP_PKL_FILE = 'mspconvs.pkl'
 
-
-def load_audio_data(df_annotations: pd.DataFrame, pc_num: int, part_num: int) -> (np.ndarray, int):
+def load_audio_data(df_annotations: pd.DataFrame, part_num: int, pc_num: int = None, audio_name: str = None) -> (np.ndarray, int):
     """
         Inputs:
             -df_annotations: Dataset annotations directory. For every file contains contains a row with the name, emotion, annotator, podcast part and number.
-            -pc_num: PodCast Number
-            -part_num: Part 
+            -part_num: Audio Part
+            -pc_num (optional): PodCast Number
+            -audio_name (optional): Audio name, including the .wav extension 
 
         Output:
             1- A numpy array with the audio time series
             2- Integer sampling rate
     """
     
-    df_part_data = df_annotations[(df_annotations['PC_Num'] == pc_num) & (df_annotations['Part_Num'] == part_num)].reset_index()
+    if audio_name is not None: df_part_data = df_annotations[(df_annotations['Audio_Name'] == audio_name) & (df_annotations['Part_Num'] == part_num)].reset_index()
+    else: df_part_data = df_annotations[(df_annotations['PC_Num'] == pc_num) & (df_annotations['Part_Num'] == part_num)].reset_index()
 
     audio_name = df_part_data['Audio_Name'][0]
     start_time = df_part_data['start_time'][0]
@@ -52,12 +53,13 @@ def load_audio_data(df_annotations: pd.DataFrame, pc_num: int, part_num: int) ->
     return data, time, sr
 
 
-def audio_select_mean_vote(df_annotations: pd.DataFrame, pc_num: int, part_num: int) -> pd.DataFrame:
+def audio_select_mean_vote(df_annotations: pd.DataFrame, part_num: int, pc_num: int = None, audio_name: str = None) -> pd.DataFrame:
     """
         Inputs:
             -df_annotations: Dataset annotations directory. For every file contains contains a row with the name, emotion, annotator, podcast part and number.
             -pc_num: PodCast Number
             -part_num: Part 
+            -audio_name (optional): Audio name, including the .wav extension 
 
         Output:
             Dataframe consisting of 3 columns: Time, Arousal, Dominance, Valence.
@@ -69,8 +71,10 @@ def audio_select_mean_vote(df_annotations: pd.DataFrame, pc_num: int, part_num: 
 
     for emotion in emotions:
         
-        time = pd.DataFrame(columns = ['Time','Annotation','Annotator'])    
-        df_copy = df_annotations[(df_annotations['PC_Num'] == pc_num) & (df_annotations['Part_Num'] == part_num) & (df_annotations.Emotion == emotion)]
+        time = pd.DataFrame(columns = ['Time','Annotation','Annotator'])
+
+        if audio_name is not None: df_copy = df_annotations[(df_annotations['Audio_Name'] == audio_name) & (df_annotations['Part_Num'] == part_num) & (df_annotations.Emotion == emotion)]
+        else: df_copy = df_annotations[(df_annotations['PC_Num'] == pc_num) & (df_annotations['Part_Num'] == part_num) & (df_annotations.Emotion == emotion)]
         
         for name, annotator, emot in zip(df_copy['Name'], df_copy['Annotator'], df_copy['Emotion']):
         
