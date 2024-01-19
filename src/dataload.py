@@ -348,17 +348,18 @@ def get_wadf(key: str = ""):
     return wadf if key == "" else wadf[key]
 
 
-def get_wa(pc_num: int, part_num: int,) -> (dict, dict):
+def get_wa(pc_num: int, part_num: int, mapping: str = "Russell_Mehrabian") -> (dict, dict):
     """
     Esta es una version NO DEFINITIVA para sacar el WA dado un pc_num y una part_num
     TODO: Se debe encontrar una forma efectiva ya que en esta func ajusta el tamano de los datapoints del WA al de menor numero de datapoints.
+    :param mapping: Russell_Mehrabian or Ekman
     :param pc_num:
     :param part_num:
     :return:
     """
     emotions = ['Valence', 'Arousal', 'Dominance']
     wadf = get_wadf()
-    vad_mapping = VAD(minmax=[-100, 100], mapping="Russell_Mehrabian")
+    vad_mapping = VAD(minmax=[-100, 100], mapping=mapping)
     wa = {}
     for emotion in emotions:
         key = f"{pc_num}_{part_num}_{emotion}"
@@ -372,15 +373,16 @@ def get_wa(pc_num: int, part_num: int,) -> (dict, dict):
     c = 0
     wa['categorical'] = []
     for v, a, d in zip (wa['Valence'][0], wa['Arousal'][0], wa['Dominance'][0]):
-        # c += 1
-        # if c == 40000:
-        #     print()
         r = vad_mapping.vad2categorical(v, a, d, k=1)
         wa['categorical'].append({'term': r[0][0]['term'], 'closest': r[0][0]['closest']})
 
-    timed_terms = {}
+    timed_terms = {} # fuerza bruta, si hay: 0.001 term: 'Love', 0.05 term: 'Hate' lo que se queda es 0.1 term 'Hate'
     for k, t in enumerate(wa['Arousal'][1]):
         timed_terms[np.around(t, 1)] = wa['categorical'][k]
+
+    wa['pc_num'] = pc_num
+    wa['part_num'] = part_num
+    wa['mapping'] = mapping
 
     return wa, timed_terms
 
@@ -451,7 +453,7 @@ function audio_viz(div_id, data){
           },
       },
     }],
-    title: `Audio VAD to Categ Viz @ MSP-Conversation_${data.PC_Num}_${data.Part_Num}`,
+    title: `Audio VAD to Categ Viz [${data.mapping}] @ MSP-Conversation_${data.PC_Num}_${data.Part_Num}`,
     showlegend: true,
   };
 
@@ -557,7 +559,7 @@ function audio_viz(div_id, data){
 """
 
 
-def audio_viz(wa: dict, pc_num: int, part_num: int, timed_terms: dict):
+def audio_viz(wa: dict, timed_terms: dict):
     # Code execution using notebookjs
     from notebookjs import execute_js
     import json
@@ -565,7 +567,7 @@ def audio_viz(wa: dict, pc_num: int, part_num: int, timed_terms: dict):
 
     emotion = 'Valence' #use for TIME reference
 
-    audio = f"/Users/beltre.wilton/Downloads/SER-Datasets/MSP-Conversation-1.1/Audio/MSP-Conversation_{str(pc_num).zfill(4)}.wav"
+    audio = f"/Users/beltre.wilton/Downloads/SER-Datasets/MSP-Conversation-1.1/Audio/MSP-Conversation_{str(wa['pc_num']).zfill(4)}.wav"
     # Solo impl para la primera parte del audio, por ahora.
     start_time = 0.0 * 1000
     end_time = int(wa[emotion][1][-1]) * 1000
@@ -579,8 +581,9 @@ def audio_viz(wa: dict, pc_num: int, part_num: int, timed_terms: dict):
         "Dominance": wa['Dominance'][0].tolist(),
         "Time": wa[emotion][1].tolist(),
         "audio": encode_string,
-        "PC_Num": str(pc_num).zfill(4),
-        "Part_Num": part_num,
+        "PC_Num": str(wa['pc_num']).zfill(4),
+        "Part_Num": wa['part_num'],
+        "mapping": wa['mapping'],
         "timed_terms": timed_terms,
     })
 
