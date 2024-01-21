@@ -17,7 +17,7 @@ from plotly.subplots import make_subplots
 from tqdm import tqdm
 from pydub import AudioSegment
 import base64
-#from vad.vad_lab import VAD
+from vad.vad_lab import VAD
 
 
 ##### constant !
@@ -377,9 +377,11 @@ def get_wa(pc_num: int, part_num: int, mapping: str = "Russell_Mehrabian") -> (d
     c = 0
     wa['categorical'] = []
     for v, a, d in zip (wa['Valence'][0], wa['Arousal'][0], wa['Dominance'][0]):
-        r = vad_mapping.vad2categorical(v, a, d, k=1)
-        wa['categorical'].append({'term': r[0][0]['term'], 'closest': r[0][0]['closest']})
+        r = vad_mapping.vad2categorical(v, a, d, k=3)
+        # wa['categorical'].append({'term': r[0][0]['term'], 'closest': r[0][0]['closest']})
+        wa['categorical'].append(r[0])
 
+    # TODO: se debe mejorar esto !
     timed_terms = {} # fuerza bruta, si hay: 0.001 term: 'Love', 0.05 term: 'Hate' lo que se queda es 0.1 term 'Hate'
     for k, t in enumerate(wa['Arousal'][1]):
         timed_terms[np.around(t, 1)] = wa['categorical'][k]
@@ -451,13 +453,16 @@ function audio_viz(div_id, data){
           text: ' ',
           textangle: 0,
           textposition: 'end',
+          xanchor: 'left',
           font: {
-              color: '#9195f2',
+              color: '#5e62b5',
               size: 14,
           },
       },
     }],
-    title: `Audio VAD to Categ Viz [${data.mapping}] @ MSP-Conversation_${data.PC_Num}_${data.Part_Num}`,
+    title: { 
+        text: `Audio VAD to Categ Viz [${data.mapping}] @ MSP-Conversation_${data.PC_Num}_${data.Part_Num}`,
+    },
     showlegend: true,
   };
 
@@ -486,12 +491,14 @@ function audio_viz(div_id, data){
 
   function refresh(position) {
     var num = round_f(position)
-    // console.log(data.timed_terms[num.toString()]);
     var term = data.timed_terms[num.toString()]
+    // console.log(term[0].term)
     nid.layout.shapes[0].x0 = position;
     nid.layout.shapes[0].x1 = position;
     if (term) {
-        nid.layout.shapes[0].label.text = `🤔 ${term.term} ${round_f(term.closest)}`
+        var r = `<br />${term[0].term} ${round_f(term[0].closest)}<br />${term[1].term} ${round_f(term[1].closest)}<br />${term[2].term} ${round_f(term[2].closest)}`
+        nid.layout.shapes[0].label.text = r
+        // nid.layout.shapes[0].label.text = `🤔 ${term.term} ${round_f(term.closest)}`
     }
     Plotly.redraw(nid);
   }
