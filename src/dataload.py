@@ -17,7 +17,7 @@ from plotly.subplots import make_subplots
 from tqdm import tqdm
 from pydub import AudioSegment
 import base64
-#from vad.vad_lab import VAD
+from vad.vad_lab import VAD
 
 
 ##### constant !
@@ -333,11 +333,11 @@ def get_wadf(key: str = ""):
     """
     wadf = {}
     try:
-        with open(f"../data/wadf.pkl", "rb") as pkl:
+        with open(f"./data/wadf.pkl", "rb") as pkl:
             wadf = pickle.load(pkl)
     except Exception as ex:
         mspconv_from_disk = {}
-        with open(f"../data/{MSP_PKL_FILE}", "rb") as pkl:
+        with open(f"./data/{MSP_PKL_FILE}", "rb") as pkl:
             mspconv_from_disk = pickle.load(pkl)
         for k in mspconv_from_disk.keys():
             _mspconv = mspconv_from_disk[k]
@@ -346,7 +346,7 @@ def get_wadf(key: str = ""):
             df = _mspconv['annotations'][6] # WA dataframe
             wadf[k] = df
         del mspconv_from_disk
-        with open(f'../data/wadf.pkl', "wb") as pkl:
+        with open(f'./data/wadf.pkl', "wb") as pkl:
             pickle.dump(wadf, pkl)
 
     return wadf if key == "" else wadf[key]
