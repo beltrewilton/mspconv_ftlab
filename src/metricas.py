@@ -57,9 +57,9 @@ def get_training_features_simple(feature_function, feature_function_parameters :
             The Arousal, Dominance and Valence columns represent the mean vote calculated for corresponding Time in the audio.
     """
 
-    end = df['Time'].max()
+    end = df.iloc[-1]['Time']
     
-    X, Y = [], []
+    X, Y = [], [] 
     
     while start + 2.5 < end:
         
@@ -67,14 +67,15 @@ def get_training_features_simple(feature_function, feature_function_parameters :
         
         feature = feature_function(df['Data'].values, feature_function_parameters['sr'])
         emotion = df_frame.groupby('Emotion').count().sort_values(by = 'Time', ascending = False).reset_index().loc[0,'Emotion']
-        
+        a, d, v = df_frame[['Arousal','Dominance','Valence']].mean()
+
         X.append(feature)
-        Y.append(emotion)
-        
+        Y.append([a,v,d,emotion])
+         
         start += step
         print(start, '/', end)
         
     df_features = pd.DataFrame(X)
-    df_features['labels'] = Y
+    df_features[['Arousal','Dominance','Valence','Emotion']] = Y
     
     return df_features

@@ -578,7 +578,7 @@ def audio_viz(wa: dict, timed_terms: dict):
 
     emotion = 'Valence' #use for TIME reference
 
-    audio = f"/Users/beltre.wilton/Downloads/SER-Datasets/MSP-Conversation-1.1/Audio/MSP-Conversation_{str(wa['pc_num']).zfill(4)}.wav"
+    audio = f"./data/MSPCORPUS/Audio/MSP-Conversation_{str(wa['pc_num']).zfill(4)}.wav"
     # Solo impl para la primera parte del audio, por ahora.
     start_time = 0.0 * 1000
     end_time = int(wa[emotion][1][-1]) * 1000
