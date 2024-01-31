@@ -1,6 +1,6 @@
 <h2> Estructura </h2>
-
 <div>
+<pre class="notranslate">
 ├── data/                                                      
 │   └── MSPCORPUS                                              // dataset de MSP
 │       ├── Annotations
@@ -19,4 +19,5 @@
 │           └── conversation.txt    
 ├── notebooks/                                                 // notebooks con código y experimentos
 └── src/                                                       // archivos con las funciones usadas para levantar los modelos
+</pre>
 </div>
