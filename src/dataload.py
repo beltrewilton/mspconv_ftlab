@@ -30,7 +30,7 @@ def load_audio_data(df_annotations: pd.DataFrame, part_num: int, pc_num: int = N
             -df_annotations: Dataset annotations directory. For every file contains contains a row with the name, emotion, annotator, podcast part and number.
             -part_num: Audio Part
             -pc_num (optional): PodCast Number
-            -audio_name (optional): Audio name, including the .wav extension 
+            -audio_name (optional): Audio name, including the .wav extension (Ex: MSP-Conversation_0002.wav)
 
         Output:
             1- A numpy array with the audio time series
