@@ -30,7 +30,7 @@ def load_audio_data(df_annotations: pd.DataFrame, part_num: int, pc_num: int = N
             -df_annotations: Dataset annotations directory. For every file contains contains a row with the name, emotion, annotator, podcast part and number.
             -part_num: Audio Part
             -pc_num (optional): PodCast Number
-            -audio_name (optional): Audio name, including the .wav extension 
+            -audio_name (optional): Audio name, including the .wav extension (Ex: MSP-Conversation_0002.wav)
 
         Output:
             1- A numpy array with the audio time series
@@ -333,11 +333,11 @@ def get_wadf(key: str = ""):
     """
     wadf = {}
     try:
-        with open(f"../data/wadf.pkl", "rb") as pkl:
+        with open(f"./data/wadf.pkl", "rb") as pkl:
             wadf = pickle.load(pkl)
     except Exception as ex:
         mspconv_from_disk = {}
-        with open(f"../data/{MSP_PKL_FILE}", "rb") as pkl:
+        with open(f"./data/{MSP_PKL_FILE}", "rb") as pkl:
             mspconv_from_disk = pickle.load(pkl)
         for k in mspconv_from_disk.keys():
             _mspconv = mspconv_from_disk[k]
@@ -346,7 +346,7 @@ def get_wadf(key: str = ""):
             df = _mspconv['annotations'][6] # WA dataframe
             wadf[k] = df
         del mspconv_from_disk
-        with open(f'../data/wadf.pkl', "wb") as pkl:
+        with open(f'./data/wadf.pkl', "wb") as pkl:
             pickle.dump(wadf, pkl)
 
     return wadf if key == "" else wadf[key]
@@ -578,7 +578,7 @@ def audio_viz(wa: dict, timed_terms: dict):
 
     emotion = 'Valence' #use for TIME reference
 
-    audio = f"/Users/beltre.wilton/Downloads/SER-Datasets/MSP-Conversation-1.1/Audio/MSP-Conversation_{str(wa['pc_num']).zfill(4)}.wav"
+    audio = f"./data/MSPCORPUS/Audio/MSP-Conversation_{str(wa['pc_num']).zfill(4)}.wav"
     # Solo impl para la primera parte del audio, por ahora.
     start_time = 0.0 * 1000
     end_time = int(wa[emotion][1][-1]) * 1000
