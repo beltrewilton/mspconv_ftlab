@@ -15,3 +15,7 @@ config.json
 audio.*
 /data/mspconvs.pkl
 data/wadf.pkl
+.metals/
+.mypy_cache/
+.vscode/
+audiosegments
