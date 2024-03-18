@@ -21,3 +21,4 @@ data/wadf.pkl
 audiosegments
 cache/
 checkpoint/
+notebooks/isolated/
