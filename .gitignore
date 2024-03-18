@@ -19,3 +19,5 @@ data/wadf.pkl
 .mypy_cache/
 .vscode/
 audiosegments
+cache/
+checkpoint/
