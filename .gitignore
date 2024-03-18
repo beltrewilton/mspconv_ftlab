@@ -22,3 +22,4 @@ audiosegments
 cache/
 checkpoint/
 notebooks/isolated/
+logs/
