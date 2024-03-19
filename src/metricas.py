@@ -42,7 +42,6 @@ def classical_features(data, sample_rate):
     
     return result
 
-
 def get_training_features_simple(feature_function, feature_function_parameters : dict, frame_duration: float, start: float, step: float, df: pd.DataFrame) -> pd.DataFrame:
     """
         Inputs:
