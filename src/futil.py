@@ -9,7 +9,17 @@ import scipy.signal as signal
 from scipy.io import wavfile
 import IPython
 from IPython.display import HTML, display
+import soundfile as sf
 
+def split_audio(audio_path, timestamps):
+    audio, sampling_rate = sf.read(audio_path)
+    segments = []
+    for start, end in timestamps:
+        start_sample = int(start * sampling_rate)
+        end_sample = int(end * sampling_rate)
+        segment = audio[start_sample:end_sample]
+        segments.append(segment)
+    return segments, sampling_rate
 
 def quantization(bits: int = 8):
     """Quantization sexample"""
