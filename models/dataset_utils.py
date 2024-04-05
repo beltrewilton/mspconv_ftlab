@@ -72,7 +72,7 @@ class MSPDataset(Dataset):
         waveform = waveform.squeeze()
         label = self.input_features['labels'][idx]
         label_id = list(vad.terms).index(label)
-        label_id = torch.tensor(label_id, dtype=torch.int)
+        label_id = torch.tensor(label_id, dtype=torch.long)
         return waveform, label_id # waveform is also float32 by default, cause of normalize=True
 
 
