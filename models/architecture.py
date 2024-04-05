@@ -83,6 +83,7 @@ class LinearLayerForClassification(nn.Module):
         self.linear_head = nn.Sequential(
             nn.ReLU(),
             nn.Linear(feature_dim, n_classes),
+            nn.Softmax(),
             # nn.BatchNorm1d(batchnorm_in_dim),
         )
 
@@ -307,9 +308,12 @@ class MSPImplementationForClassification(L.LightningModule):
         loss, true_labels, logits = self._iter_step(batch)
         self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
         #Accuracy
-        if batch_idx % 1 == 0:
+        if batch_idx % 10 == 0:
             y_hat = torch.argmax(logits, axis=1)
             pred = [vad.terms[y] for y in y_hat] # para mirar
+            print("y_hat      :", y_hat)
+            print("true_labels:", true_labels)
+            print("\n")
             acc = self.train_acc(y_hat, true_labels)
             self.log(
                 "train_acc", acc.item(), on_step=True, on_epoch=True, prog_bar=True
@@ -339,19 +343,22 @@ class MSPImplementationForClassification(L.LightningModule):
         self.log("test_acc", acc.item())
 
     def configure_optimizers(self):
-        timem.start("torch.optim.AdamW")
-        optimizer = torch.optim.AdamW(self.model.trainable_params(), lr=self.lr) #TODO: ver otros optimizadores.
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=5, factor=0.5, mode="min", verbose=True)
-        timem.end("torch.optim.AdamW")
-        return {
-            "optimizer": optimizer,
-            "lr_scheduler": {
-                "scheduler": scheduler,
-                "monitor": "train_loss",
-                "interval": "epoch",
-                "frequency": 1,
-            }
-        }
+        # timem.start("torch.optim.AdamW")
+        # optimizer = torch.optim.AdamW(self.model.trainable_params(), lr=self.lr) #TODO: ver otros optimizadores.
+        # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=5, factor=0.5, mode="min", verbose=True)
+        # timem.end("torch.optim.AdamW")
+        # return {
+        #     "optimizer": optimizer,
+        #     "lr_scheduler": {
+        #         "scheduler": scheduler,
+        #         "monitor": "train_loss",
+        #         "interval": "epoch",
+        #         "frequency": 1,
+        #     }
+        # }
+
+        optimizer = torch.optim.AdamW(self.model.trainable_params(), lr=self.lr)
+        return optimizer
 
 
 class MSPImplementation(L.LightningModule):

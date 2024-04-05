@@ -17,14 +17,14 @@ os.environ['HF_HOME'] = f'{ROOT}/cache'
 os.environ['HF_DATASETS_CACHE'] = f'{ROOT}/cache'
 LOG_DIR = f"{ROOT}/logs"
 
-batch_size = 16
+batch_size = 8
 chunk_size = 5
 overlap = 0.5
 num_workers = 7
 # checkpoint_name = "facebook/wav2vec2-base-960h"
 checkpoint_name = "facebook/wav2vec2-xls-r-300m"
 train_mode = True
-lr = 1e-8
+lr = 1e-4
 epochs = 10 #10
 
 
