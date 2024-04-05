@@ -83,7 +83,7 @@ class LinearLayerForClassification(nn.Module):
         self.linear_head = nn.Sequential(
             nn.ReLU(),
             nn.Linear(feature_dim, n_classes),
-            nn.Softmax(),
+            # nn.Softmax(),
             # nn.BatchNorm1d(batchnorm_in_dim),
         )
 
@@ -195,7 +195,8 @@ class Wav2vec2ModelWrapperForClassification(nn.Module):
         self.wav2vec2 = Wav2Vec2ForPreTraining.from_pretrained(checkpoint_name, output_hidden_states=True).wav2vec2
         self.wav2vec2.encoder.config.gradient_checkpointing = False
         self.n_classes = n_classes
-        self.linear_layer = LinearLayerForClassification(n_classes=n_classes)
+        self.projector = nn.Linear(self.wav2vec2.config.hidden_size, self.wav2vec2.config.classifier_proj_size)
+        self.linear_layer = nn.Linear(self.wav2vec2.config.classifier_proj_size, self.n_classes)
         self.train_mode = train_mode
         self.wav2vec2.training = train_mode
         self.wav2vec2.init_weights()
@@ -217,7 +218,7 @@ class Wav2vec2ModelWrapperForClassification(nn.Module):
         return mask
 
     def trainable_params(self): #TODO: ojo con esto
-        return list(self.linear_layer.trainable_params()) + list(self.wav2vec2.encoder.parameters())
+        return list(self.projector.parameters()) + list(self.linear_layer.parameters()) + list(self.wav2vec2.encoder.parameters())
         # return self.linear_layer.trainable_params()
 
     # From huggingface
@@ -269,16 +270,22 @@ class Wav2vec2ModelWrapperForClassification(nn.Module):
         )
 
         hidden_states = encoder_outputs[0]
-        logits = F.relu(hidden_states)
-        logits = logits.permute(1, 0, 2)  # L, B, C
+        hidden_states = self.projector(hidden_states)
+        pooled_output = hidden_states.mean(dim=1)
 
-        last_feat_pos = (self.get_feat_extract_output_lengths(length) - 1).to(input_values.device)
-        masks = torch.arange(logits.size(0), device=logits.device).expand(last_feat_pos.size(0),-1) < last_feat_pos.unsqueeze(1)
-        masks = masks.float()
-        logits = (logits * masks.T.unsqueeze(-1)).sum(0) / last_feat_pos.unsqueeze(1)
+
+        # logits = F.relu(hidden_states)
+        # logits = logits.permute(1, 0, 2)  # L, B, C
+
+        # last_feat_pos = (self.get_feat_extract_output_lengths(length) - 1).to(input_values.device)
+        # masks = torch.arange(logits.size(0), device=logits.device).expand(last_feat_pos.size(0),-1) < last_feat_pos.unsqueeze(1)
+        # masks = masks.float()
+        # logits = (logits * masks.T.unsqueeze(-1)).sum(0) / last_feat_pos.unsqueeze(1)
         # xlogits = ((logits * masks.T.unsqueeze(-1)).permute(1, 0, 2).sum(2) / last_feat_pos.unsqueeze(1))
 
-        logits = self.linear_layer(logits)
+        logits = self.linear_layer(pooled_output)
+
+        # loss = loss_fct(logits.view(-1, 24), labels.view(-1)) VER QUE PASA
 
         return logits, hidden_states
 
@@ -309,6 +316,7 @@ class MSPImplementationForClassification(L.LightningModule):
         self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
         #Accuracy
         if batch_idx % 10 == 0:
+            logits = F.softmax(logits)
             y_hat = torch.argmax(logits, axis=1)
             pred = [vad.terms[y] for y in y_hat] # para mirar
             print("y_hat      :", y_hat)
@@ -326,6 +334,7 @@ class MSPImplementationForClassification(L.LightningModule):
         self.log("val_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
         #Accuracy
         if batch_idx % 20 == 0:
+            logits = F.softmax(logits)
             y_hat = torch.argmax(logits, axis=1)
             pred = [vad.terms[y] for y in y_hat]  # para mirar
             acc = self.val_acc(y_hat, true_labels)
@@ -337,6 +346,7 @@ class MSPImplementationForClassification(L.LightningModule):
         loss, true_labels, logits = self._iter_step(batch)
         self.log("test_loss", loss)
         #Accuracy
+        logits = F.softmax(logits)
         y_hat = torch.argmax(logits, axis=1)
         pred = [vad.terms[y] for y in y_hat]  # para mirar
         acc = self.test_acc(y_hat, true_labels)
