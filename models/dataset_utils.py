@@ -13,6 +13,7 @@ timem = Timem(verbose=True)
 
 class MSPDataset(Dataset):
     def __init__(self, input_features: dict, verbose: bool = False):
+        super(MSPDataset, self).__init__()
         self.input_features = input_features
         self.verbose = verbose
 
@@ -34,7 +35,7 @@ class MSPDataset(Dataset):
                 input = F.pad(input, (0, dif), "constant", 0)
             dif = max_seqlen_label - label.size(0)
             if dif > 0:
-                label = F.pad(label, (0, dif), "constant", 0)
+                label = F.pad(label, (0, dif), "constant", 41) #TODO: space token
             return input, label
 
         batch = list(map(pad_, batch))
@@ -45,8 +46,9 @@ class MSPDataset(Dataset):
         # zeros = torch.zeros(label.size(0) - 1, dtype=label.dtype, device=label.device)
         # result = torch.zeros(2 * label.size(0) - 1, dtype=label.dtype, device=label.device)
 
-        zeros = torch.tensor([0], dtype=label.dtype, device=label.device).repeat(label.size(0) - 1)
-        result = torch.tensor([0], dtype=label.dtype, device=label.device).repeat(2 * label.size(0) - 1)
+
+        zeros = torch.tensor([41], dtype=label.dtype, device=label.device).repeat(label.size(0) - 1)
+        result = torch.tensor([41], dtype=label.dtype, device=label.device).repeat(2 * label.size(0) - 1)
         result[::2] = label
         result[1::2] = zeros
         return result
@@ -63,11 +65,27 @@ class MSPDataset(Dataset):
         timem.start("__getitem__")
         if self.verbose:
             print(f"idx:{idx} {self.input_features['inputs'][idx]}")
-        part = f"{AUDIO_SEGMENTS}/{self.input_features['inputs'][idx]}"
+        # part = f"{AUDIO_SEGMENTS}/{self.input_features['inputs'][idx]}"
+        part = self.input_features['inputs'][idx]
         waveform, _ = torchaudio.load(str(part), normalize=True)
-        waveform = waveform.squeeze()
+        waveform = waveform.squeeze() * 10
         label = self.input_features['labels'][idx]
-        label = torch.tensor(label, dtype=torch.int)
+
+        vocab = {'-': 0, 'aa': 1, 'ae': 2, 'ah': 3, 'aw': 4, 'ay': 5, 'b': 6, 'ch': 7, 'd': 8, 'dh': 9, 'dx': 10,
+                 'eh': 11,
+                 'er': 12, 'ey': 13, 'f': 14, 'g': 15, 'h#': 16, 'hh': 17, 'ih': 18, 'iy': 19, 'jh': 20, 'k': 21,
+                 'l': 22,
+                 'm': 23, 'n': 24, 'ng': 25, 'ow': 26, 'oy': 27, 'p': 28, 'r': 29, 's': 30, 'sh': 31, 't': 32, 'th': 33,
+                 'uh': 34, 'uw': 35, 'v': 36, 'w': 37, 'y': 38, 'z': 39, '?': 40, '|': 41}
+
+        label_ids = []
+        for l in label.split():
+            try:
+                label_ids.append(vocab[l])
+            except Exception as ex:
+                label_ids.append(40)
+
+        label = torch.tensor(label_ids, dtype=torch.int)
         label = self.__insert_zeros_between_elements(label)
         timem.end("__getitem__")
         return waveform, label # waveform is also float32 by default, cause of normalize=True

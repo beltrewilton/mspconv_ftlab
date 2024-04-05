@@ -11,25 +11,29 @@ from models.architecture import Wav2vec2ModelWrapper, MSPImplementation, Timem
 
 os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 os.environ["PYTORCH_MPS_HIGH_WATERMARK_RATIO"] = "0.0"
+os.environ["PYTORCH_CUDA_ALLOC_CONF"]="expandable_segments:True"
+
 os.environ['HF_HOME'] = f'{ROOT}/cache'
 os.environ['HF_DATASETS_CACHE'] = f'{ROOT}/cache'
 LOG_DIR = f"{ROOT}/logs"
 
-batch_size = 20
-chunk_size = 15
+batch_size = 16
+chunk_size = 5
+overlap = 0.5
 num_workers = 7
-checkpoint_name = "facebook/wav2vec2-base-960h"
+# checkpoint_name = "facebook/wav2vec2-base-960h"
+checkpoint_name = "facebook/wav2vec2-xls-r-300m"
 train_mode = True
-lr = 0.005 #TODO 0.05
-epochs = 1 #10
+lr = 1e-8
+epochs = 10 #10
 
 
-def get_loaders(batch_size: int, chunk_size: int, num_workers: int = 0 ):
-    datapros_train = MSPDataProcessor(msp_path=MSP_PATH, chunk_size=chunk_size, split="Train", verbose=True)
-    datapros_test = MSPDataProcessor(msp_path=MSP_PATH, chunk_size=chunk_size, split="Test", verbose=True)
-    datapros_dev = MSPDataProcessor(msp_path=MSP_PATH, chunk_size=chunk_size, split="Development", verbose=True)
+def get_loaders(batch_size: int, chunk_size: int, overlap: float, num_workers: int = 0 ):
+    datapros_train = MSPDataProcessor(msp_path=MSP_PATH, chunk_size=chunk_size, overlap=overlap, split="Train", verbose=True)
+    datapros_test = MSPDataProcessor(msp_path=MSP_PATH, chunk_size=chunk_size, overlap=overlap, split="Test", verbose=True)
+    datapros_dev = MSPDataProcessor(msp_path=MSP_PATH, chunk_size=chunk_size, overlap=overlap, split="Development", verbose=True)
 
-    dataset_train = MSPDataset(input_features=datapros_train.load_input_features(),)
+    dataset_train = MSPDataset(input_features=datapros_train.load_input_features())
     dataset_test = MSPDataset(input_features=datapros_test.load_input_features(),)
     dataset_dev = MSPDataset(input_features=datapros_dev.load_input_features(),)
 
@@ -59,7 +63,7 @@ def get_loaders(batch_size: int, chunk_size: int, num_workers: int = 0 ):
         collate_fn=dataset_dev.seqCollate,
     )
 
-    return loader_train, loader_dev, loader_test
+    return loader_train, None, loader_test
 
 
 class MeasureCallback(L.Callback):
@@ -79,12 +83,15 @@ class MeasureCallback(L.Callback):
         self, trainer, pl_module,  batch, batch_idx
     ):
         self.time_batch.start("")
+        # torch.cuda.empty_cache()
+        # import gc
+        # gc.collect()
 
     def on_train_batch_end(
         self, trainer, pl_module, outputs, batch, batch_idx
     ):
         execution_time = self.time_batch.end(f"on_train_batch_end batch_idx:{batch_idx}")
-        pl_module.log("train_mins_per_batch", execution_time)
+        pl_module.log("train_mins_per_batch", execution_time / 60)
 
     def on_before_backward(self, trainer, pl_module, loss):
         self.time_back.start("")
@@ -97,7 +104,7 @@ class MeasureCallback(L.Callback):
 
     def on_train_epoch_end(self, trainer, pl_module):
         execution_time = self.time_epoch.end("on_train_epoch_end")
-        pl_module.log("train_mins_per_epoch", execution_time)
+        pl_module.log("train_mins_per_epoch", execution_time / 60)
 
     # def on_before_optimizer_step(
     #     self, trainer, pl_module, optimizer: torch.optim.AdamW
@@ -109,8 +116,8 @@ class MeasureCallback(L.Callback):
 
 
 if __name__ == "__main__":
-    loader_train, loader_dev, loader_test = get_loaders(batch_size, chunk_size, num_workers)
-    model = Wav2vec2ModelWrapper(checkpoint_name=checkpoint_name, chunk_size=chunk_size, final_dropout=0.01, train_mode=train_mode)
+    loader_train, loader_dev, loader_test = get_loaders(batch_size, chunk_size, overlap, num_workers)
+    model = Wav2vec2ModelWrapper(checkpoint_name=checkpoint_name, chunk_size=chunk_size, overlap=overlap, final_dropout=0.1, train_mode=train_mode)
     msp_impl_model = MSPImplementation(model=model, lr=lr, train_mode=train_mode)
 
     checkpoint_callback = ModelCheckpoint(save_top_k=1, mode="min", monitor="train_loss", save_last=True)
@@ -118,17 +125,19 @@ if __name__ == "__main__":
 
     trainer = L.Trainer(
         max_epochs=epochs,
-        accelerator="mps",
+        check_val_every_n_epoch=1,
+        accelerator="auto",
         devices="auto",
         default_root_dir=LOG_DIR,
         callbacks=[checkpoint_callback, time_measure_callback],
         log_every_n_steps=1,
+        num_sanity_val_steps=0,
     )
 
     trainer.fit(
         model=msp_impl_model,
         train_dataloaders=loader_train,
-        val_dataloaders=loader_dev,
+        val_dataloaders=loader_test,
     )
 
     train_acc = trainer.test(model=msp_impl_model, dataloaders=loader_train, ckpt_path="best")[0]["test_err_rate"]

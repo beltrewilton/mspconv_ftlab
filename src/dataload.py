@@ -250,22 +250,19 @@ def build_mspconvs(df_annotations: pd.DataFrame, df_reduced: pd.DataFrame, pc_nu
     return mspconvs
 
 
-def sample_heatmap(mspconv: dict, key: str):
+def sample_heatmap(ck_score: np.ndarray, annolist: list, key: str):
     """
     plot un heatmap de la relaciónvo "distancia" de cada anotador
     :param mspconv:
     :param key:
     :return: None
     """
-    raters = mspconv['raters']
-    ck_score = mspconv['ck_score']
-    annolist = mspconv['annolist']
 
     ax = plt.axes()
     ax.set_title(key)
     sns.heatmap(
         ck_score,
-        mask=np.tri(len(raters)),
+        mask=np.tri(len(ck_score)),
         annot=True, linewidths=5,
         vmin=0, vmax=1,
         xticklabels=[f" {a}" for a in annolist],
@@ -678,8 +675,8 @@ def play():
 
 
 if __name__ == "__main__":
-    # df_annotations, df_reduced = get_annotated_data()
-    # mspconvs = build_mspconvs(df_annotations, df_reduced)
+    df_annotations, df_reduced = get_annotated_data()
+    mspconvs = build_mspconvs(df_annotations, df_reduced)
     #
     #TODO: rethink names of variables and method
     #TODO: solucionar que el audio play solo anda con la parte # 1 del audio
