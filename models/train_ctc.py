@@ -7,7 +7,7 @@ from lightning.pytorch.callbacks import ModelCheckpoint
 sys.path.append("../")
 from models.data_processor import MSPDataProcessor, MSP_PATH, ROOT, AUDIO_SEGMENTS
 from models.dataset_utils import MSPDataset
-from models.architecture import Wav2vec2ModelWrapper, MSPImplementation, Timem
+from models.architecture import Wav2vec2ModelWrapper, Wav2vec2ModelWrapperForClassification, MSPImplementation, MSPImplementationForClassification, Timem
 
 os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 os.environ["PYTORCH_MPS_HIGH_WATERMARK_RATIO"] = "0.0"
@@ -63,7 +63,7 @@ def get_loaders(batch_size: int, chunk_size: int, overlap: float, num_workers: i
         collate_fn=dataset_dev.seqCollate,
     )
 
-    return loader_train, None, loader_test
+    return loader_train, loader_dev, loader_test
 
 
 class MeasureCallback(L.Callback):
@@ -117,8 +117,13 @@ class MeasureCallback(L.Callback):
 
 if __name__ == "__main__":
     loader_train, loader_dev, loader_test = get_loaders(batch_size, chunk_size, overlap, num_workers)
-    model = Wav2vec2ModelWrapper(checkpoint_name=checkpoint_name, chunk_size=chunk_size, overlap=overlap, final_dropout=0.1, train_mode=train_mode)
-    msp_impl_model = MSPImplementation(model=model, lr=lr, train_mode=train_mode)
+
+    is_classification = True
+    if is_classification:
+        model = Wav2vec2ModelWrapperForClassification(checkpoint_name=checkpoint_name, train_mode=train_mode)
+        msp_impl_model = MSPImplementationForClassification(model=model, lr=lr, train_mode=train_mode)
+    else:
+        pass
 
     checkpoint_callback = ModelCheckpoint(save_top_k=1, mode="min", monitor="train_loss", save_last=True)
     time_measure_callback = MeasureCallback()
@@ -140,9 +145,9 @@ if __name__ == "__main__":
         val_dataloaders=loader_test,
     )
 
-    train_acc = trainer.test(model=msp_impl_model, dataloaders=loader_train, ckpt_path="best")[0]["test_err_rate"]
-    val_acc = trainer.test(model=msp_impl_model, dataloaders=loader_dev, ckpt_path="best")[0]["test_err_rate"]
-    test_acc = trainer.test(model=msp_impl_model, dataloaders=loader_test, ckpt_path="best")[0]["test_err_rate"]
+    train_acc = trainer.test(model=msp_impl_model, dataloaders=loader_train, ckpt_path="best")[0]["test_acc"]
+    val_acc = trainer.test(model=msp_impl_model, dataloaders=loader_dev, ckpt_path="best")[0]["test_acc"]
+    test_acc = trainer.test(model=msp_impl_model, dataloaders=loader_test, ckpt_path="best")[0]["test_acc"]
 
     print(
         f"Train Acc {train_acc*100:.2f}%"

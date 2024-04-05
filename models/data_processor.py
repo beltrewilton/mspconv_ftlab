@@ -23,11 +23,12 @@ os.makedirs(AUDIO_PARTS, exist_ok=True)
 
 vad = VAD(minmax=[-100, 100], mapping="OCC")
 
-USE_ONNX = False
-model, utils = torch.hub.load(repo_or_dir='snakers4/silero-vad',
-                              model='silero_vad',
-                              force_reload=False,
-                              onnx=USE_ONNX)
+# USE_ONNX = False
+# model, utils = torch.hub.load(repo_or_dir='snakers4/silero-vad',
+#                               model='silero_vad',
+#                               force_reload=False,
+#                               onnx=USE_ONNX)
+model, utils = None, None
 
 
 def get_annotated_rdata() -> (pd.DataFrame):
@@ -64,7 +65,7 @@ class MSPDataProcessor:
         self.overlap = overlap
         self.df_reference = None
         self.split = split
-        self.input_features_path = f"class_input_features-{self.split.lower()}.pkl"
+        self.input_features_path = f"class_input_features_{self.split.lower()}_fixed.pkl"
         self.verbose = verbose
         self.SAMPLE_RATE = 16_000
         self.TEMPERATURE_DATAPOINT = .5
