@@ -196,6 +196,7 @@ class Wav2vec2ModelWrapperForClassification(nn.Module):
         self.wav2vec2.encoder.config.gradient_checkpointing = False
         self.n_classes = n_classes
         self.projector = nn.Linear(self.wav2vec2.config.hidden_size, self.wav2vec2.config.classifier_proj_size)
+        self.batch_norm = nn.BatchNorm1d(self.wav2vec2.config.classifier_proj_size)
         self.linear_layer = nn.Linear(self.wav2vec2.config.classifier_proj_size, self.n_classes)
         self.train_mode = train_mode
         self.wav2vec2.training = train_mode
@@ -218,7 +219,7 @@ class Wav2vec2ModelWrapperForClassification(nn.Module):
         return mask
 
     def trainable_params(self): #TODO: ojo con esto
-        return list(self.projector.parameters()) + list(self.linear_layer.parameters()) + list(self.wav2vec2.encoder.parameters())
+        return list(self.projector.parameters()) + list(self.batch_norm.parameters()) + list(self.linear_layer.parameters()) + list(self.wav2vec2.encoder.parameters())
         # return self.linear_layer.trainable_params()
 
     # From huggingface
@@ -272,6 +273,10 @@ class Wav2vec2ModelWrapperForClassification(nn.Module):
         hidden_states = encoder_outputs[0]
         hidden_states = self.projector(hidden_states)
         pooled_output = hidden_states.mean(dim=1)
+        pooled_output = self.batch_norm(pooled_output)
+        logits = self.linear_layer(pooled_output)
+
+        return logits, hidden_states
 
 
         # logits = F.relu(hidden_states)
@@ -283,11 +288,11 @@ class Wav2vec2ModelWrapperForClassification(nn.Module):
         # logits = (logits * masks.T.unsqueeze(-1)).sum(0) / last_feat_pos.unsqueeze(1)
         # xlogits = ((logits * masks.T.unsqueeze(-1)).permute(1, 0, 2).sum(2) / last_feat_pos.unsqueeze(1))
 
-        logits = self.linear_layer(pooled_output)
+
 
         # loss = loss_fct(logits.view(-1, 24), labels.view(-1)) VER QUE PASA
 
-        return logits, hidden_states
+
 
 
 class MSPImplementationForClassification(L.LightningModule):
@@ -354,21 +359,21 @@ class MSPImplementationForClassification(L.LightningModule):
 
     def configure_optimizers(self):
         # timem.start("torch.optim.AdamW")
-        # optimizer = torch.optim.AdamW(self.model.trainable_params(), lr=self.lr) #TODO: ver otros optimizadores.
-        # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=5, factor=0.5, mode="min", verbose=True)
-        # timem.end("torch.optim.AdamW")
-        # return {
-        #     "optimizer": optimizer,
-        #     "lr_scheduler": {
-        #         "scheduler": scheduler,
-        #         "monitor": "train_loss",
-        #         "interval": "epoch",
-        #         "frequency": 1,
-        #     }
-        # }
+        optimizer = torch.optim.AdamW(self.model.trainable_params(), lr=self.lr) #TODO: ver otros optimizadores.
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=5, factor=0.5, mode="min", verbose=True)
+        timem.end("torch.optim.AdamW")
+        return {
+            "optimizer": optimizer,
+            "lr_scheduler": {
+                "scheduler": scheduler,
+                "monitor": "train_loss",
+                "interval": "epoch",
+                "frequency": 1,
+            }
+        }
 
-        optimizer = torch.optim.AdamW(self.model.trainable_params(), lr=self.lr)
-        return optimizer
+        # optimizer = torch.optim.AdamW(self.model.trainable_params(), lr=self.lr)
+        # return optimizer
 
 
 class MSPImplementation(L.LightningModule):
