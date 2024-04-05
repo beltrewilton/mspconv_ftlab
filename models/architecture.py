@@ -338,14 +338,13 @@ class MSPImplementationForClassification(L.LightningModule):
         loss, true_labels, logits = self._iter_step(batch)
         self.log("val_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
         #Accuracy
-        if batch_idx % 20 == 0:
-            logits = F.softmax(logits)
-            y_hat = torch.argmax(logits, axis=1)
-            pred = [vad.terms[y] for y in y_hat]  # para mirar
-            acc = self.val_acc(y_hat, true_labels)
-            self.log(
-                "val_acc", acc.item(), on_step=True, on_epoch=True, prog_bar=True
-            )
+        logits = F.softmax(logits)
+        y_hat = torch.argmax(logits, axis=1)
+        pred = [vad.terms[y] for y in y_hat]  # para mirar
+        acc = self.val_acc(y_hat, true_labels)
+        self.log(
+            "val_acc", acc.item(), on_step=True, on_epoch=True, prog_bar=True
+        )
 
     def test_step(self, batch, batch_idx):
         loss, true_labels, logits = self._iter_step(batch)
@@ -361,6 +360,8 @@ class MSPImplementationForClassification(L.LightningModule):
         # timem.start("torch.optim.AdamW")
         optimizer = torch.optim.AdamW(self.model.trainable_params(), lr=self.lr) #TODO: ver otros optimizadores.
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=5, factor=0.5, mode="min", verbose=True)
+        # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=500, eta_min=0, last_epoch=-1, verbose=False)
+
         timem.end("torch.optim.AdamW")
         return {
             "optimizer": optimizer,

@@ -24,8 +24,8 @@ num_workers = 7
 # checkpoint_name = "facebook/wav2vec2-base-960h"
 checkpoint_name = "facebook/wav2vec2-xls-r-300m"
 train_mode = True
-lr = 1e-4
-epochs = 10 #10
+lr = 1e-6
+epochs = 30 #10
 
 
 def get_loaders(batch_size: int, chunk_size: int, overlap: float, num_workers: int = 0 ):
