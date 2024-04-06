@@ -198,7 +198,7 @@ class Wav2vec2ModelWrapperForClassification(nn.Module):
         self.n_classes = n_classes
         self.projector = nn.Linear(self.wav2vec2.config.hidden_size, self.wav2vec2.config.classifier_proj_size)
         self.batch_norm = nn.BatchNorm1d(self.wav2vec2.config.classifier_proj_size)
-        self.dropout = nn.Dropout(p=0.1) #try alrevez, antes de batchnorm
+        self.dropout = nn.Dropout(p=0.1)
         self.linear_layer = nn.Linear(self.wav2vec2.config.classifier_proj_size, self.n_classes)
         self.train_mode = train_mode
         self.wav2vec2.training = train_mode
@@ -360,12 +360,9 @@ class MSPImplementationForClassification(L.LightningModule):
         self.log("test_acc", acc.item())
 
     def configure_optimizers(self):
-        # timem.start("torch.optim.AdamW")
         optimizer = torch.optim.AdamW(self.model.trainable_params(), lr=self.lr) #TODO: ver otros optimizadores.
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=5, factor=0.5, mode="min", verbose=True)
-        # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=500, eta_min=0, last_epoch=-1, verbose=False)
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=5, factor=0.5, mode="min", cooldown=27, verbose=True)
 
-        timem.end("torch.optim.AdamW")
         return {
             "optimizer": optimizer,
             "lr_scheduler": {

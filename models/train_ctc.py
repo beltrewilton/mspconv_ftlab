@@ -24,7 +24,7 @@ num_workers = 7
 # checkpoint_name = "facebook/wav2vec2-base-960h"
 checkpoint_name = "facebook/wav2vec2-xls-r-300m"
 train_mode = True
-lr = 1e-6
+lr = 1e-5
 epochs = 30 #10
 
 
