@@ -109,8 +109,8 @@ class Wav2vec2ModelWrapper(nn.Module):
 
         if train_mode: #SpecAug compara con self.wav2vec2.config.*  setear este mask_feature_prob aparte
             self.mask_time_length = chunk_size # [Wilton] was 15
-            self.wav2vec2.config.mask_feature_prob = 0.05
-            self.wav2vec2.config.mask_time_prob = 0.05
+            self.wav2vec2.config.mask_feature_prob = 0.075
+            self.wav2vec2.config.mask_time_prob = 0.075
 
     def prepare_mask(self, length, shape, dtype, device):
         # Modified from huggingface
@@ -205,7 +205,8 @@ class Wav2vec2ModelWrapperForClassification(nn.Module):
         self.wav2vec2.init_weights()
 
         if train_mode: #SpecAug compara con self.wav2vec2.config.*  setear este mask_feature_prob aparte
-            self.wav2vec2.config.mask_feature_prob = 0.05
+            self.wav2vec2.config.mask_feature_prob = 0.075
+            self.wav2vec2.config.mask_time_prob = 0.075
 
     def prepare_mask(self, length, shape, dtype, device):
         # Modified from huggingface
@@ -361,7 +362,7 @@ class MSPImplementationForClassification(L.LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.model.trainable_params(), lr=self.lr) #TODO: ver otros optimizadores.
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=5, factor=0.5, mode="min", cooldown=27, verbose=True)
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=5, factor=0.5, mode="min", verbose=True)
 
         return {
             "optimizer": optimizer,

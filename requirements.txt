@@ -1,5 +1,7 @@
 torch
 torchaudio
+transformers
+soundfile
 lightning
 torchmetrics
 flashlight-text
