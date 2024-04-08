@@ -196,10 +196,10 @@ class Wav2vec2ModelWrapperForClassification(nn.Module):
         self.wav2vec2 = Wav2Vec2ForPreTraining.from_pretrained(checkpoint_name, output_hidden_states=True).wav2vec2
         self.wav2vec2.encoder.config.gradient_checkpointing = False
         self.n_classes = n_classes
-        self.dropout1 = nn.Dropout(p=0.2)
+        self.dropout1 = nn.Dropout(p=0.3)
         self.projector = nn.Linear(self.wav2vec2.config.hidden_size, self.wav2vec2.config.classifier_proj_size)
-        self.batch_norm = nn.BatchNorm1d(self.wav2vec2.config.classifier_proj_size)
-        self.dropout2 = nn.Dropout(p=0.2)
+        self.batch_norm = nn.BatchNorm1d(self.wav2vec2.config.classifier_proj_size, eps=1e-2)
+        self.dropout2 = nn.Dropout(p=0.3)
         self.linear_layer = nn.Linear(self.wav2vec2.config.classifier_proj_size, self.n_classes)
         self.train_mode = train_mode
         self.wav2vec2.training = train_mode
@@ -208,8 +208,8 @@ class Wav2vec2ModelWrapperForClassification(nn.Module):
         if train_mode: #SpecAug compara con self.wav2vec2.config.*  setear este mask_feature_prob aparte
             self.wav2vec2.config.mask_time_length = 20
             self.wav2vec2.config.mask_feature_length = 10
-            self.wav2vec2.config.mask_feature_prob = 0.25 # Probability of each feature is masked!
-            self.wav2vec2.config.mask_time_prob = 0.25   # Probability of each time-step is masked!
+            self.wav2vec2.config.mask_feature_prob = 0.3 # Probability of each feature is masked!
+            self.wav2vec2.config.mask_time_prob = 0.3   # Probability of each time-step is masked!
 
     def prepare_mask(self, length, shape, dtype, device):
         # Modified from huggingface
@@ -224,7 +224,7 @@ class Wav2vec2ModelWrapperForClassification(nn.Module):
         mask = mask.flip([-1]).cumsum(-1).flip([-1]).bool()
         return mask
 
-    def trainable_params(self): #TODO: ojo con esto
+    def trainable_params(self):
         return list(self.dropout1.parameters()) + list(self.projector.parameters()) + list(self.batch_norm.parameters()) + list(self.dropout2.parameters()) + list(self.linear_layer.parameters()) + list(self.wav2vec2.encoder.parameters())
         # return self.linear_layer.trainable_params()
 
@@ -365,7 +365,7 @@ class MSPImplementationForClassification(L.LightningModule):
         self.log("test_acc", acc.item())
 
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.model.trainable_params(), lr=self.lr) #TODO: ver otros optimizadores.
+        optimizer = torch.optim.AdamW(self.model.trainable_params(), lr=self.lr, weight_decay=0.05) #TODO: ver otros optimizadores.
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=5, factor=0.5, mode="min", verbose=True)
 
         return {
@@ -510,4 +510,13 @@ class MSPImplementation(L.LightningModule):
 # log_probs = nn.functional.log_softmax(logits, dim=-1, dtype=torch.float32).transpose(0, 1)
 # dim=-1 dim=2 para mi inputs es lo mismo
 
+#FAQ:  OUT OF DISTRIBUTION DATA TRANSFORMER SUPPORT
 
+# DROPOUT .5 ???/
+# weight_decay con valor alto entre 0 1 (default es 0.01)
+# authros: 0.025 to 0.05 to be optimal for their networks trained on image classification
+
+# Batch Norm with decay...
+# In a practical point of view, to avoid such instabilities,
+# I found that simply increasing the value of epsilon to something larger
+# (like 1e-2 instead of the PyTorch default of 1e-5) works surprisingly well.
