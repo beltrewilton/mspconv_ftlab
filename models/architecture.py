@@ -108,7 +108,7 @@ class Wav2vec2ModelWrapper(nn.Module):
         self.wav2vec2.init_weights()
 
         if train_mode: #SpecAug compara con self.wav2vec2.config.*  setear este mask_feature_prob aparte
-            self.mask_time_length = chunk_size # [Wilton] was 15
+            self.mask_time_length = 20 # [Wilton] was 15
             self.wav2vec2.config.mask_feature_prob = 0.075
             self.wav2vec2.config.mask_time_prob = 0.075
 
@@ -196,17 +196,20 @@ class Wav2vec2ModelWrapperForClassification(nn.Module):
         self.wav2vec2 = Wav2Vec2ForPreTraining.from_pretrained(checkpoint_name, output_hidden_states=True).wav2vec2
         self.wav2vec2.encoder.config.gradient_checkpointing = False
         self.n_classes = n_classes
+        self.dropout1 = nn.Dropout(p=0.2)
         self.projector = nn.Linear(self.wav2vec2.config.hidden_size, self.wav2vec2.config.classifier_proj_size)
         self.batch_norm = nn.BatchNorm1d(self.wav2vec2.config.classifier_proj_size)
-        self.dropout = nn.Dropout(p=0.1)
+        self.dropout2 = nn.Dropout(p=0.2)
         self.linear_layer = nn.Linear(self.wav2vec2.config.classifier_proj_size, self.n_classes)
         self.train_mode = train_mode
         self.wav2vec2.training = train_mode
         self.wav2vec2.init_weights()
 
         if train_mode: #SpecAug compara con self.wav2vec2.config.*  setear este mask_feature_prob aparte
-            self.wav2vec2.config.mask_feature_prob = 0.075
-            self.wav2vec2.config.mask_time_prob = 0.075
+            self.wav2vec2.config.mask_time_length = 20
+            self.wav2vec2.config.mask_feature_length = 10
+            self.wav2vec2.config.mask_feature_prob = 0.25 # Probability of each feature is masked!
+            self.wav2vec2.config.mask_time_prob = 0.25   # Probability of each time-step is masked!
 
     def prepare_mask(self, length, shape, dtype, device):
         # Modified from huggingface
@@ -222,7 +225,7 @@ class Wav2vec2ModelWrapperForClassification(nn.Module):
         return mask
 
     def trainable_params(self): #TODO: ojo con esto
-        return list(self.projector.parameters()) + list(self.batch_norm.parameters()) + list(self.dropout.parameters()) + list(self.linear_layer.parameters()) + list(self.wav2vec2.encoder.parameters())
+        return list(self.dropout1.parameters()) + list(self.projector.parameters()) + list(self.batch_norm.parameters()) + list(self.dropout2.parameters()) + list(self.linear_layer.parameters()) + list(self.wav2vec2.encoder.parameters())
         # return self.linear_layer.trainable_params()
 
     # From huggingface
@@ -274,10 +277,11 @@ class Wav2vec2ModelWrapperForClassification(nn.Module):
         )
 
         hidden_states = encoder_outputs[0]
+        hidden_states = self.dropout1(hidden_states)
         hidden_states = self.projector(hidden_states)
         pooled_output = hidden_states.mean(dim=1)
         pooled_output = self.batch_norm(pooled_output)
-        pooled_output = self.dropout(pooled_output)
+        pooled_output = self.dropout2(pooled_output)
         logits = self.linear_layer(pooled_output)
 
         return logits, hidden_states
@@ -505,3 +509,5 @@ class MSPImplementation(L.LightningModule):
 # TODO: comida para CTCLoss:
 # log_probs = nn.functional.log_softmax(logits, dim=-1, dtype=torch.float32).transpose(0, 1)
 # dim=-1 dim=2 para mi inputs es lo mismo
+
+
