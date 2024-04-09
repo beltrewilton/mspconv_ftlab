@@ -66,6 +66,8 @@ class MSPDataProcessor:
         self.df_reference = None
         self.split = split
         self.input_features_path = f"class_input_features_{self.split.lower()}_fixed.pkl"
+        if self.split == "Train":
+            self.input_features_path = f"class_input_features_train_synth.pkl"
         self.verbose = verbose
         self.SAMPLE_RATE = 16_000
         self.TEMPERATURE_DATAPOINT = .5
