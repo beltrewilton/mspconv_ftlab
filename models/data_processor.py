@@ -65,7 +65,7 @@ class MSPDataProcessor:
         self.overlap = overlap
         self.df_reference = None
         self.split = split
-        self.input_features_path = f"class_input_features_{self.split.lower()}_fixed.pkl"
+        self.input_features_path = f"class_input_features_{self.split.lower()}_balanced.pkl"
         self.verbose = verbose
         self.SAMPLE_RATE = 16_000
         self.TEMPERATURE_DATAPOINT = .5
