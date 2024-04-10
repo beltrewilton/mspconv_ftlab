@@ -328,7 +328,7 @@ class MSPImplementationForClassification(L.LightningModule):
         loss, true_labels, logits = self._iter_step(batch)
         self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
         #Accuracy
-        if batch_idx % 10 == 0:
+        if batch_idx % 50 == 0:
             logits = F.softmax(logits)
             y_hat = torch.argmax(logits, axis=1)
             pred = [vad.terms[y] for y in y_hat] # para mirar
@@ -349,6 +349,10 @@ class MSPImplementationForClassification(L.LightningModule):
         logits = F.softmax(logits)
         y_hat = torch.argmax(logits, axis=1)
         pred = [vad.terms[y] for y in y_hat]  # para mirar
+        print("Validation ")
+        print("y_hat      :", y_hat)
+        print("true_labels:", true_labels)
+        print("\n")
         acc = self.val_acc(y_hat, true_labels)
         self.log(
             "val_acc", acc.item(), on_step=True, on_epoch=True, prog_bar=True
