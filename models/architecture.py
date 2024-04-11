@@ -331,7 +331,6 @@ class MSPImplementationForClassification(L.LightningModule):
         if batch_idx % 50 == 0:
             logits = F.softmax(logits)
             y_hat = torch.argmax(logits, axis=1)
-            pred = [vad.terms[y] for y in y_hat] # para mirar
             print("y_hat      :", y_hat)
             print("true_labels:", true_labels)
             print("\n")
@@ -348,7 +347,6 @@ class MSPImplementationForClassification(L.LightningModule):
         #Accuracy
         logits = F.softmax(logits)
         y_hat = torch.argmax(logits, axis=1)
-        pred = [vad.terms[y] for y in y_hat]  # para mirar
         print("Validation ")
         print("y_hat      :", y_hat)
         print("true_labels:", true_labels)
@@ -364,7 +362,6 @@ class MSPImplementationForClassification(L.LightningModule):
         #Accuracy
         logits = F.softmax(logits)
         y_hat = torch.argmax(logits, axis=1)
-        pred = [vad.terms[y] for y in y_hat]  # para mirar
         acc = self.test_acc(y_hat, true_labels)
         self.log("test_acc", acc.item())
 

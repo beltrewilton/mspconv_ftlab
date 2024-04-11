@@ -13,6 +13,7 @@ vad = VAD(minmax=[-100, 100], mapping="OCC")
 
 timem = Timem(verbose=True)
 
+terms = ['RESENTMENT', 'SATISFACTION', 'REPROACH', 'LOVE', 'NEUTRAL', 'PRIDE', 'ANGER', 'HOPE', 'GLOATING', 'PITY', 'HATE', 'HAPPY FOR?', 'DISLIKING', 'JOY']
 
 class MSPDataset(Dataset):
     def __init__(self, input_features: dict, verbose: bool = False):
@@ -71,7 +72,7 @@ class MSPDataset(Dataset):
         waveform, _ = torchaudio.load(str(part), normalize=True)
         waveform = waveform.squeeze()
         label = self.input_features['labels'][idx]
-        label_id = list(vad.terms).index(label)
+        label_id = terms.index(label)
         label_id = torch.tensor(label_id, dtype=torch.long)
         return waveform, label_id # waveform is also float32 by default, cause of normalize=True
 

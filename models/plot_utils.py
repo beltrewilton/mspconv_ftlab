@@ -16,7 +16,7 @@ def plot_freq(loader:DataLoader, split: str):
     data = []
     for idx, freq in items:
         if idx == 0: continue
-        data.append([vad.terms[idx - 1], freq])
+        data.append([vad.terms[idx - 1], freq]) #TODO deprecated !
 
     df_emo_freq = pd.DataFrame(columns=['Emotion', 'Frequency'], data=data)
     df_emo_freq = df_emo_freq.sort_values(by=['Frequency'], ascending=False)
