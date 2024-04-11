@@ -405,7 +405,7 @@ class MSPDataProcessor:
                 p = "_".join([str(round(p, 4)) for p in dp[0]])
                 fmt = str(audio).replace(".wav", f"_{cat[0]}_{p}.wav")
                 audio.rename(fmt)
-                inputs.append(fmt)
+                inputs.append(Path(fmt).name)
         input_features = {'inputs': inputs, 'labels': labels}
         if self.verbose:
             print(
