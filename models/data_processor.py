@@ -417,7 +417,7 @@ class MSPDataProcessor:
 
 if __name__ == "__main__":
     chunk_size = 3
-    overlap = 0.10
+    overlap = 0.05
     dataprocessor = MSPDataProcessor(msp_path=MSP_PATH, chunk_size=chunk_size, overlap=overlap, split="Train", verbose=True)
     dataprocessor.load_input_features()
 

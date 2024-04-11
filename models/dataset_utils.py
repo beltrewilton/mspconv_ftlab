@@ -8,7 +8,6 @@ from torch.utils.data.dataloader import default_collate
 import torch.nn.functional as F
 from models.architecture import Timem
 from vad.vad_lab import VAD
-from pathlib import Path
 
 vad = VAD(minmax=[-100, 100], mapping="OCC")
 
@@ -69,8 +68,7 @@ class MSPDataset(Dataset):
         """
         if self.verbose:
             print(f"idx:{idx} {self.input_features['inputs'][idx]}")
-        input  = Path(self.input_features['inputs'][idx]).name
-        part = f"{AUDIO_SEGMENTS}/{input}" # TODO: to device????
+        part = f"{AUDIO_SEGMENTS}/{self.input_features['inputs'][idx]}" # TODO: to device????
         waveform, _ = torchaudio.load(str(part), normalize=True)
         waveform = waveform.squeeze()
         label = self.input_features['labels'][idx]
