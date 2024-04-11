@@ -78,7 +78,7 @@ class LinearLayer(nn.Module):
 
 
 class LinearLayerForClassification(nn.Module):
-    def __init__(self, feature_dim: int = 1024,  n_classes: int = 24):
+    def __init__(self, feature_dim: int = 1024,  n_classes: int = 14):
         super().__init__()
         self.linear_head = nn.Sequential(
             nn.ReLU(),

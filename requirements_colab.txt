@@ -1,0 +1,4 @@
+lightning
+torchmetrics
+flashlight-text
+git+https://github.com/beltrewilton/VAD.git
