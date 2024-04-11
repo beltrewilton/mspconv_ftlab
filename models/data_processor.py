@@ -23,12 +23,11 @@ os.makedirs(AUDIO_PARTS, exist_ok=True)
 
 vad = VAD(minmax=[-100, 100], mapping="OCC")
 
-# USE_ONNX = False
-# model, utils = torch.hub.load(repo_or_dir='snakers4/silero-vad',
-#                               model='silero_vad',
-#                               force_reload=False,
-#                               onnx=USE_ONNX)
-model, utils = None, None
+USE_ONNX = False
+model, utils = torch.hub.load(repo_or_dir='snakers4/silero-vad',
+                              model='silero_vad',
+                              force_reload=False,
+                              onnx=USE_ONNX)
 
 
 def get_annotated_rdata() -> (pd.DataFrame):
@@ -65,7 +64,7 @@ class MSPDataProcessor:
         self.overlap = overlap
         self.df_reference = None
         self.split = split
-        self.input_features_path = f"class_input_features_{self.split.lower()}_fixed.pkl"
+        self.input_features_path = f"class_input_features_{self.split.lower()}_robust.pkl"
         self.verbose = verbose
         self.SAMPLE_RATE = 16_000
         self.TEMPERATURE_DATAPOINT = .5
@@ -398,11 +397,15 @@ class MSPDataProcessor:
         labels = []
         for key in labels_dp.keys():
             for wv, dp in zip(waves[key], labels_dp[key]):
-                inputs.append(wv)
                 # cat = [get_medium(vad.vad2categorical(*vals, k=1, use_plot=False)[0][0]['index']) for vals in dp]
-                cat = [vad.vad2categorical(*vals, k=1, use_plot=False)[0][0]['index'] for vals in dp]
+                cat = [vad.vad2categorical(*vals, k=1, use_plot=False)[0][0]['term'] for vals in dp]
                 # labels.append(" ".join(cat))
-                labels.append(cat)
+                labels.append(cat[0])
+                audio = Path(f"{AUDIO_SEGMENTS}/{wv}")
+                p = "_".join([str(round(p, 4)) for p in dp[0]])
+                fmt = str(audio).replace(".wav", f"_{cat[0]}_{p}.wav")
+                audio.rename(fmt)
+                inputs.append(fmt)
         input_features = {'inputs': inputs, 'labels': labels}
         if self.verbose:
             print(
