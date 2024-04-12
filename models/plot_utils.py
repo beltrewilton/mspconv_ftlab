@@ -41,7 +41,7 @@ def conf_matrix(y_hat, true_labels, terms):
     vmin = np.min(cf_matrix)
     vmax = np.max(cf_matrix)
     off_diag_mask = np.eye(*cf_matrix.shape, dtype=bool)
-    fig = plt.figure(figsize=(3, 3))
+    fig = plt.figure(figsize=(6, 6))
     # gs0 = matplotlib.gridspec.GridSpec(1, 2, width_ratios=[20, 2], hspace=0.05)
     # gs00 = matplotlib.gridspec.GridSpecFromSubplotSpec(1, 2, subplot_spec=gs0[1], hspace=0)
     # ax = fig.add_subplot(gs0[0])
