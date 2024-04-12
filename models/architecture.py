@@ -319,6 +319,9 @@ class MSPImplementationForClassification(L.LightningModule):
         self.train_acc = Accuracy(task="multiclass", num_classes=self.model.n_classes)
         self.val_acc = Accuracy(task="multiclass", num_classes=self.model.n_classes)
         self.test_acc = Accuracy(task="multiclass", num_classes=self.model.n_classes)
+        self.y_hats = []
+        self.y_trues = []
+        self.last_running = 'None'
 
     def forward(self, x, labels):
         return self.model(x, labels=labels)
@@ -344,6 +347,15 @@ class MSPImplementationForClassification(L.LightningModule):
                 "train_acc", acc.item(), on_step=True, on_epoch=True, prog_bar=True
             )
 
+        if self.last_running == 'validation_step':
+            cm = conf_matrix(self.y_hats, self.y_trues, terms)
+            tensorboard = self.logger.experiment
+            tensorboard.add_figure('confusion_matrix', cm.get_figure(), self.current_epoch)
+            self.y_hats = []
+            self.y_trues = []
+
+        self.last_running = 'training_step'
+
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -361,9 +373,9 @@ class MSPImplementationForClassification(L.LightningModule):
             "val_acc", acc.item(), on_step=True, on_epoch=True, prog_bar=True
         )
 
-        cm = conf_matrix(y_hat, true_labels, terms)
-        tensorboard = self.logger.experiment
-        tensorboard.add_figure('confusion_matrix', cm.get_figure(), batch_idx)
+        self.y_hats.extend(y_hat.cpu().numpy())
+        self.y_trues.extend(true_labels.cpu().numpy())
+        self.last_running = 'validation_step'
 
 
     def test_step(self, batch, batch_idx):
