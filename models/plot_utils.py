@@ -35,8 +35,8 @@ def plot_freq(loader:DataLoader, split: str):
 
 
 def conf_matrix(y_hat, true_labels, terms):
-    cf_matrix = confusion_matrix(y_hat.cpu().numpy(), true_labels.cpu().numpy())
-    idx = sorted(np.unique(np.hstack([y_hat.cpu().numpy(), true_labels.cpu().numpy()])))
+    cf_matrix = confusion_matrix(y_hat, true_labels)
+    idx = sorted(np.unique(np.hstack([y_hat, true_labels])))
     df_cm = pd.DataFrame(cf_matrix, index=[f"{terms[i]}:{i}" for i in idx], columns=[f"{terms[i]}:{i}" for i in idx])
     vmin = np.min(cf_matrix)
     vmax = np.max(cf_matrix)
