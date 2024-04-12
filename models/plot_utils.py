@@ -1,7 +1,14 @@
 import pandas as pd
+import numpy as np
 from torch.utils.data import DataLoader
 from collections import Counter
 import plotly.express as px
+from sklearn.metrics import confusion_matrix
+import seaborn as sn
+import pandas as pd
+import matplotlib
+import matplotlib.pyplot as plt
+
 from vad.vad_lab import VAD
 
 
@@ -25,3 +32,24 @@ def plot_freq(loader:DataLoader, split: str):
                        title=f'Histograma frecuencia de emociones (MSP) en {split}', text_auto=True)
 
     return df_emo_freq, fig
+
+
+def conf_matrix(y_hat, true_labels, terms):
+    cf_matrix = confusion_matrix(y_hat.cpu().numpy(), true_labels.cpu().numpy())
+    idx = sorted(np.unique(np.hstack([y_hat.cpu().numpy(), true_labels.cpu().numpy()])))
+    df_cm = pd.DataFrame(cf_matrix, index=[f"{terms[i]}:{i}" for i in idx], columns=[f"{terms[i]}:{i}" for i in idx])
+    vmin = np.min(cf_matrix)
+    vmax = np.max(cf_matrix)
+    off_diag_mask = np.eye(*cf_matrix.shape, dtype=bool)
+    fig = plt.figure(figsize=(3, 3))
+    # gs0 = matplotlib.gridspec.GridSpec(1, 2, width_ratios=[20, 2], hspace=0.05)
+    # gs00 = matplotlib.gridspec.GridSpecFromSubplotSpec(1, 2, subplot_spec=gs0[1], hspace=0)
+    # ax = fig.add_subplot(gs0[0])
+    # cax1 = fig.add_subplot(gs00[0])
+    # cax2 = fig.add_subplot(gs00[1])
+    plt.tick_params(axis='both', which='major', labelsize=7)
+    cm = sn.heatmap(df_cm, annot=True, mask=~off_diag_mask, cmap='Blues', vmin=vmin, vmax=vmax, cbar=False)
+    cm = sn.heatmap(df_cm, annot=True, mask=off_diag_mask, cmap='OrRd', vmin=vmin, vmax=vmax, cbar_kws=dict(ticks=[]), cbar=False)
+    plt.tight_layout()
+
+    return cm

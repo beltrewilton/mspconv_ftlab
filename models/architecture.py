@@ -12,7 +12,10 @@ from torchmetrics.regression import MeanSquaredError
 from torchmetrics.text import CharErrorRate
 from torchmetrics import Accuracy
 from transformers import Wav2Vec2ForPreTraining
+from models.plot_utils import conf_matrix
 from models.data_processor import ROOT
+
+terms = ['RESENTMENT', 'SATISFACTION', 'REPROACH', 'LOVE', 'NEUTRAL', 'PRIDE', 'ANGER', 'HOPE', 'GLOATING', 'PITY', 'HATE', 'HAPPY FOR?', 'DISLIKING', 'JOY']
 
 from vad.vad_lab import VAD
 
@@ -350,13 +353,18 @@ class MSPImplementationForClassification(L.LightningModule):
         logits = F.softmax(logits)
         y_hat = torch.argmax(logits, axis=1)
         print("Validation ")
-        print("y_hat      :", y_hat)
-        print("true_labels:", true_labels)
+        print("y_hat      :", [terms[y.item()] for y in y_hat])
+        print("true_labels:", [terms[y.item()] for y in true_labels])
         print("\n")
         acc = self.val_acc(y_hat, true_labels)
         self.log(
             "val_acc", acc.item(), on_step=True, on_epoch=True, prog_bar=True
         )
+
+        cm = conf_matrix(y_hat, true_labels, terms)
+        tensorboard = self.logger.experiment
+        tensorboard.add_figure('confusion_matrix', cm.get_figure(), batch_idx)
+
 
     def test_step(self, batch, batch_idx):
         loss, true_labels, logits = self._iter_step(batch)
