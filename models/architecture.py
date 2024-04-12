@@ -356,6 +356,13 @@ class MSPImplementationForClassification(L.LightningModule):
 
         self.last_running = 'training_step'
 
+        # logits = F.softmax(logits)
+        # y_hat = torch.argmax(logits, axis=1)
+        # y_h, y_t = [], []
+        # [y_h.extend(y_hat.cpu().numpy()) for i in range(500)]
+        # [y_t.extend(true_labels.cpu().numpy()) for i in range(500)]
+        # conf_matrix(y_h, y_t, terms)
+
         return loss
 
     def validation_step(self, batch, batch_idx):

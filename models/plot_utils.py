@@ -41,15 +41,15 @@ def conf_matrix(y_hat, true_labels, terms):
     vmin = np.min(cf_matrix)
     vmax = np.max(cf_matrix)
     off_diag_mask = np.eye(*cf_matrix.shape, dtype=bool)
-    fig = plt.figure(figsize=(6, 6))
+    fig = plt.figure(figsize=(8, 6))
     # gs0 = matplotlib.gridspec.GridSpec(1, 2, width_ratios=[20, 2], hspace=0.05)
     # gs00 = matplotlib.gridspec.GridSpecFromSubplotSpec(1, 2, subplot_spec=gs0[1], hspace=0)
     # ax = fig.add_subplot(gs0[0])
     # cax1 = fig.add_subplot(gs00[0])
     # cax2 = fig.add_subplot(gs00[1])
     plt.tick_params(axis='both', which='major', labelsize=7)
-    cm = sn.heatmap(df_cm, annot=True, mask=~off_diag_mask, cmap='Blues', vmin=vmin, vmax=vmax, cbar=False)
-    cm = sn.heatmap(df_cm, annot=True, mask=off_diag_mask, cmap='OrRd', vmin=vmin, vmax=vmax, cbar_kws=dict(ticks=[]), cbar=False)
+    cm = sn.heatmap(df_cm, annot=True, mask=~off_diag_mask, cmap='Blues', vmin=vmin, vmax=vmax, cbar=False, fmt='g')
+    cm = sn.heatmap(df_cm, annot=True, mask=off_diag_mask, cmap='OrRd', vmin=vmin, vmax=vmax, cbar_kws=dict(ticks=[]), cbar=False, fmt='g')
     plt.tight_layout()
 
     return cm
