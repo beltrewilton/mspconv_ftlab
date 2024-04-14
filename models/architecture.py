@@ -200,11 +200,10 @@ class Wav2vec2ModelWrapperForClassification(nn.Module):
         self.wav2vec2.encoder.config.gradient_checkpointing = False
         self.n_classes = n_classes
         self.dropout1 = nn.Dropout(p=0.3)
-        # self.projector = nn.Linear(self.wav2vec2.config.hidden_size, self.wav2vec2.config.classifier_proj_size)
-        self.batch_norm = nn.BatchNorm1d(1024, eps=1e-2)
+        self.projector = nn.Linear(self.wav2vec2.config.hidden_size, self.wav2vec2.config.classifier_proj_size)
+        self.batch_norm = nn.BatchNorm1d(self.wav2vec2.config.classifier_proj_size, eps=1e-2)
         self.dropout2 = nn.Dropout(p=0.3)
-        # self.linear_layer = nn.Linear(self.wav2vec2.config.classifier_proj_size, self.n_classes)
-        self.linear_layer = nn.Linear(1024, self.n_classes)
+        self.linear_layer = nn.Linear(self.wav2vec2.config.classifier_proj_size, self.n_classes)
         self.train_mode = train_mode
         self.wav2vec2.training = train_mode
         self.wav2vec2.init_weights()
@@ -229,8 +228,7 @@ class Wav2vec2ModelWrapperForClassification(nn.Module):
         return mask
 
     def trainable_params(self):
-        # return list(self.dropout1.parameters()) + list(self.projector.parameters()) + list(self.batch_norm.parameters()) + list(self.dropout2.parameters()) + list(self.linear_layer.parameters()) + list(self.wav2vec2.encoder.parameters())
-        return list(self.dropout1.parameters()) + list(self.batch_norm.parameters()) + list(self.dropout2.parameters()) + list(self.linear_layer.parameters()) + list(self.wav2vec2.encoder.parameters())
+        return list(self.dropout1.parameters()) + list(self.projector.parameters()) + list(self.batch_norm.parameters()) + list(self.dropout2.parameters()) + list(self.linear_layer.parameters()) + list(self.wav2vec2.encoder.parameters())
         # return self.linear_layer.trainable_params()
 
     # From huggingface
@@ -283,7 +281,7 @@ class Wav2vec2ModelWrapperForClassification(nn.Module):
 
         hidden_states = encoder_outputs[0]
         hidden_states = self.dropout1(hidden_states)
-        # hidden_states = self.projector(hidden_states)
+        hidden_states = self.projector(hidden_states)
         pooled_output = hidden_states.mean(dim=1)
         pooled_output = self.batch_norm(pooled_output)
         pooled_output = self.dropout2(pooled_output)
