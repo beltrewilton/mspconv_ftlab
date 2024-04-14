@@ -346,7 +346,8 @@ class MSPImplementationForClassification(L.LightningModule):
             )
 
         if self.last_running == 'validation_step':
-            cm = conf_matrix(self.y_hats, self.y_trues, terms)
+            ov_acc = self.val_acc(torch.tensor(self.y_hats, device=logits.device), torch.tensor(self.y_trues, device=logits.device))
+            cm = conf_matrix(self.y_hats, self.y_trues, terms, self.current_epoch, ov_acc)
             tensorboard = self.logger.experiment
             tensorboard.add_figure('confusion_matrix', cm.get_figure(), self.current_epoch)
             self.y_hats = []

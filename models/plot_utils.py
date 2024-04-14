@@ -34,7 +34,7 @@ def plot_freq(loader:DataLoader, split: str):
     return df_emo_freq, fig
 
 
-def conf_matrix(y_hat, true_labels, terms):
+def conf_matrix(y_hat, true_labels, terms, current_epoch, ov_acc):
     cf_matrix = confusion_matrix(y_hat, true_labels)
     idx = sorted(np.unique(np.hstack([y_hat, true_labels])))
     df_cm = pd.DataFrame(cf_matrix, index=[f"{terms[i]}:{i}" for i in idx], columns=[f"{terms[i]}:{i}" for i in idx])
@@ -48,6 +48,7 @@ def conf_matrix(y_hat, true_labels, terms):
     # cax1 = fig.add_subplot(gs00[0])
     # cax2 = fig.add_subplot(gs00[1])
     plt.tick_params(axis='both', which='major', labelsize=7)
+    plt.title(f"epoch: {current_epoch-1} acc: {ov_acc}")
     cm = sn.heatmap(df_cm, annot=True, mask=~off_diag_mask, cmap='Blues', vmin=vmin, vmax=vmax, cbar=False, fmt='g')
     cm = sn.heatmap(df_cm, annot=True, mask=off_diag_mask, cmap='OrRd', vmin=vmin, vmax=vmax, cbar_kws=dict(ticks=[]), cbar=False, fmt='g')
     plt.tight_layout()

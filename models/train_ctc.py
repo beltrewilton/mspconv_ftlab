@@ -120,7 +120,7 @@ if __name__ == "__main__":
 
     is_classification = True
     if is_classification:
-        model = Wav2vec2ModelWrapperForClassification(checkpoint_name=checkpoint_name, train_mode=train_mode)
+        model = Wav2vec2ModelWrapperForClassification(checkpoint_name=checkpoint_name, n_classes = 14, train_mode=train_mode)
         msp_impl_model = MSPImplementationForClassification(model=model, lr=lr, train_mode=train_mode)
     else:
         pass
