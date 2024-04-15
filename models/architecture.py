@@ -211,8 +211,8 @@ class Wav2vec2ModelWrapperForClassification(nn.Module):
         if train_mode: #SpecAug compara con self.wav2vec2.config.*  setear este mask_feature_prob aparte
             self.wav2vec2.config.mask_time_length = 20
             self.wav2vec2.config.mask_feature_length = 10
-            self.wav2vec2.config.mask_feature_prob = 0.3 # Probability of each feature is masked!
-            self.wav2vec2.config.mask_time_prob = 0.3   # Probability of each time-step is masked!
+            self.wav2vec2.config.mask_feature_prob = 0.6 # Probability of each feature is masked!
+            self.wav2vec2.config.mask_time_prob = 0.6   # Probability of each time-step is masked!
 
     def prepare_mask(self, length, shape, dtype, device):
         # Modified from huggingface

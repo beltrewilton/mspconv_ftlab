@@ -142,7 +142,7 @@ if __name__ == "__main__":
     trainer.fit(
         model=msp_impl_model,
         train_dataloaders=loader_train,
-        val_dataloaders=loader_test,
+        val_dataloaders=loader_dev,
     )
 
     train_acc = trainer.test(model=msp_impl_model, dataloaders=loader_train, ckpt_path="best")[0]["test_acc"]
