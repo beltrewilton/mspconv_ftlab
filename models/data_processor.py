@@ -11,7 +11,7 @@ import pickle
 from tqdm import tqdm
 from vad.vad_lab import VAD
 MSP_PATH = '/Users/beltre.wilton/Downloads/SER-Datasets/MSP-Conversation-1.1'
-ROOT = '/Users/beltre.wilton/apps/mspconv_ftlab'
+ROOT = '/content/mspconv_ftlab'
 sys.path.append(ROOT)
 AUDIO_SEGMENTS = f'{ROOT}/audiosegments'
 AUDIO_PARTS = f'{ROOT}/audioparts'

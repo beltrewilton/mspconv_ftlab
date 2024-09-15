@@ -28,3 +28,4 @@ cache/
 checkpoint/
 notebooks/isolated/
 logs/
+audiosegments.tar.gz
