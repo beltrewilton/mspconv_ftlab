@@ -2,6 +2,7 @@ import sys
 import os
 import torch
 import torchaudio
+from contextlib import contextmanager
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -10,7 +11,7 @@ import pickle
 from tqdm import tqdm
 from vad.vad_lab import VAD
 MSP_PATH = '/Users/beltre.wilton/Downloads/SER-Datasets/MSP-Conversation-1.1'
-ROOT = Path(__file__).parent.parent.__str__()
+ROOT = '/Users/beltre.wilton/apps/mspconv_ftlab'
 sys.path.append(ROOT)
 AUDIO_SEGMENTS = f'{ROOT}/audiosegments'
 AUDIO_PARTS = f'{ROOT}/audioparts'
@@ -24,10 +25,27 @@ os.makedirs(AUDIO_PARTS, exist_ok=True)
 vad = VAD(minmax=[-100, 100], mapping="OCC")
 
 USE_ONNX = False
-model, utils = torch.hub.load(repo_or_dir='snakers4/silero-vad',
-                              model='silero_vad',
-                              force_reload=False,
-                              onnx=USE_ONNX)
+
+@contextmanager
+def suppress_output():
+    with open(os.devnull, 'w') as devnull:
+        old_stdout = sys.stdout
+        old_stderr = sys.stderr
+        sys.stdout = devnull
+        sys.stderr = devnull
+        try:
+            yield
+        finally:
+            sys.stdout = old_stdout
+            sys.stderr = old_stderr
+
+def get_silero():
+    with suppress_output():
+        model, utils = torch.hub.load(repo_or_dir='snakers4/silero-vad',
+                                    model='silero_vad',
+                                    force_reload=False,
+                                    onnx=USE_ONNX)
+    return model, utils
 
 
 def get_annotated_rdata() -> (pd.DataFrame):
@@ -64,7 +82,7 @@ class MSPDataProcessor:
         self.overlap = overlap
         self.df_reference = None
         self.split = split
-        self.input_features_path = f"class_input_features_{self.split.lower()}_robust.pkl"
+        self.input_features_path = f"class_input_features_{self.split.lower()}_robust_20240915.pkl"
         self.verbose = verbose
         self.SAMPLE_RATE = 16_000
         self.TEMPERATURE_DATAPOINT = .5
@@ -225,7 +243,8 @@ class MSPDataProcessor:
 
         # iterar por cuts .....
 
-        data_points = {'Valence': [], 'Arousal': [], 'Dominance': []}
+        # data_points = {'Valence': [], 'Arousal': [], 'Dominance': []}
+        data_points = {'Valence': []}
         for emo in data_points.keys():
             key = f"{pc_num}_{part_num}_{emo}"
             wak = self.wadf[key]
@@ -234,6 +253,7 @@ class MSPDataProcessor:
             # for i in range(0, int(l), self.chunk_size):
             for i in cuts:
                 a = []
+                #TODO partes que NO son 1 "la inicial", el time inicia desde "cero" ... FIX FIX FIX 
                 wa = wak[(wak['Time'] > (i['start'] - self.overlap)) & (wak['Time'] < (i['end'] + self.overlap))]
                 if len(wa) == 0:
                     continue
@@ -260,7 +280,7 @@ class MSPDataProcessor:
                 #     a.append(np.round(p, 4))
                 a = np.nan_to_num(wa['Annotation'].to_numpy()).mean()
                 try:
-                    data_points[emo].append([a])
+                    data_points[emo].append(a) # data_points[emo].append([a])
                 except Exception as ex:
                     print(ex)
 
@@ -289,6 +309,8 @@ class MSPDataProcessor:
 
     def silero_cut(self, msp_wave: str, CUT_NEAR: int = 3, SAMPLING_RATE: int = 16_000, silence_threshold: float = 0.100, length: int = 6) -> dict:
         torch.set_num_threads(1)
+
+        model, utils = get_silero()
 
         (get_speech_timestamps,
          save_audio,
@@ -362,33 +384,33 @@ class MSPDataProcessor:
         #         # cuts = self.silero_cut()
 
 
-        if len(self.df_reference) == 0:
+        if len(self.df_reference) == 0: # TODO use assert
             raise Exception(f'Parece que el split: {self.split} es incorrecto, intenta con Train, Test o Development')
 
         chunked_data_points = self.__prepare_datapoints()
         waves = self.__prepare_audio_inputs(chunked_data_points, dump_to_disk=True)
 
-        labels_dp = {}
-        for key in chunked_data_points.keys():
-            cdp = []
-            ii = min(len(chunked_data_points[key]['Valence']), len(chunked_data_points[key]['Arousal']),
-                     len(chunked_data_points[key]['Dominance']))
-            for i in range(ii):
-                t = []
-                jj = min(len(chunked_data_points[key]['Valence'][i]), len(chunked_data_points[key]['Arousal'][i]),
-                    len(chunked_data_points[key]['Dominance'][i]))
-                for j in range(jj):
-                    t.append((chunked_data_points[key]['Valence'][i][j], chunked_data_points[key]['Arousal'][i][j], chunked_data_points[key]['Dominance'][i][j]))
-                cdp.append(t)
-            labels_dp[key] = cdp
+        labels_dp = chunked_data_points # labels_dp = {}
+        # for key in chunked_data_points.keys():
+        #     cdp = []
+        #     ii = min(len(chunked_data_points[key]['Valence']), len(chunked_data_points[key]['Arousal']),
+        #              len(chunked_data_points[key]['Dominance']))
+        #     for i in range(ii):
+        #         t = []
+        #         jj = min(len(chunked_data_points[key]['Valence'][i]), len(chunked_data_points[key]['Arousal'][i]),
+        #             len(chunked_data_points[key]['Dominance'][i]))
+        #         for j in range(jj):
+        #             t.append((chunked_data_points[key]['Valence'][i][j], chunked_data_points[key]['Arousal'][i][j], chunked_data_points[key]['Dominance'][i][j]))
+        #         cdp.append(t)
+        #     labels_dp[key] = cdp
 
         if self.verbose:
             ok = True
             for w in waves.keys():
-                if len(waves[w]) != len(labels_dp[w]):
-                    print(f'\n*** FAIL [{w}]:  Inputs y Labels waves:{len(waves[w])} datapoints:{len(labels_dp[w])}')
-                    waves[w] = waves[w][:len(labels_dp[w])]
-                    print(f'  -> FIXED [{w}]:  Inputs y Labels waves:{len(waves[w])} datapoints:{len(labels_dp[w])}')
+                if len(waves[w]) != len(labels_dp[w]['Valence']): # if len(waves[w]) != len([labels_dp[w]]):
+                    print(f"\n*** FAIL [{w}]:  Inputs y Labels waves:{len(waves[w])} datapoints:{len(labels_dp[w]['Valence'])}")
+                    waves[w] = waves[w][:len(labels_dp[w]['Valence'])]
+                    print(f"  -> FIXED [{w}]:  Inputs y Labels waves:{len(waves[w])} datapoints:{len(labels_dp[w]['Valence'])}")
                     ok = False
             if ok:
                 print('\nInputs y Labels se corresponden en catidad de segmentos.\n')
@@ -396,16 +418,16 @@ class MSPDataProcessor:
         inputs = []
         labels = []
         for key in labels_dp.keys():
-            for wv, dp in zip(waves[key], labels_dp[key]):
+            for wv, dp in zip(waves[key], labels_dp[key]['Valence']):
                 # cat = [get_medium(vad.vad2categorical(*vals, k=1, use_plot=False)[0][0]['index']) for vals in dp]
-                cat = [vad.vad2categorical(*vals, k=1, use_plot=False)[0][0]['term'] for vals in dp]
-                # labels.append(" ".join(cat))
-                labels.append(cat[0])
+                # cat = [vad.vad2categorical(*vals, k=1, use_plot=False)[0][0]['term'] for vals in dp] # TODO check dp
+                # labels.append(cat[0])
                 audio = Path(f"{AUDIO_SEGMENTS}/{wv}")
-                p = "_".join([str(round(p, 4)) for p in dp[0]])
-                fmt = str(audio).replace(".wav", f"_{cat[0]}_{p}.wav")
-                audio.rename(fmt)
-                inputs.append(Path(fmt).name)
+                # p = "_".join([str(round(p, 4)) for p in dp[0]])
+                #fmt = str(audio).replace(".wav", f"_{cat[0]}_{p}.wav")
+                # audio.rename(fmt)
+                inputs.append(audio.name)
+                labels.append(dp)
         input_features = {'inputs': inputs, 'labels': labels}
         if self.verbose:
             print(

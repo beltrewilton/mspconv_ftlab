@@ -35,11 +35,14 @@ class MSPDataset(Dataset):
         def pad_(x):
             input, label = x[0], x[1]
             dif = max_seqlen - input.size(0)
+
             if dif > 0:
                 input = F.pad(input, (0, dif), "constant", 0)
+
             # dif = max_seqlen_label - label.size(0)
             # if dif > 0:
-            #     label = F.pad(label, (0, dif), "constant", 41) #TODO: space token
+            #     label = F.pad(label, (0, dif), "constant", 0) #TODO: space token in CTC approach
+
             return input, label
 
         batch = list(map(pad_, batch))
@@ -72,9 +75,10 @@ class MSPDataset(Dataset):
         waveform, _ = torchaudio.load(str(part), normalize=True)
         waveform = waveform.squeeze()
         label = self.input_features['labels'][idx]
-        label_id = terms.index(label)
-        label_id = torch.tensor(label_id, dtype=torch.long)
-        return waveform, label_id # waveform is also float32 by default, cause of normalize=True
+        # label_id = terms.index(label)
+        # label = torch.tensor(label, dtype=torch.long)
+        label = torch.tensor(label, dtype=torch.float32)
+        return waveform, label # waveform is also float32 by default, cause of normalize=True
 
 
 if __name__ == "__main__":

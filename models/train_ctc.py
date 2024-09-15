@@ -4,7 +4,7 @@ import torch
 from torch.utils.data import DataLoader
 import lightning as L
 from lightning.pytorch.callbacks import ModelCheckpoint
-sys.path.append("../")
+# sys.path.append("../")
 from models.data_processor import MSPDataProcessor, MSP_PATH, ROOT, AUDIO_SEGMENTS
 from models.dataset_utils import MSPDataset
 from models.architecture import Wav2vec2ModelWrapper, Wav2vec2ModelWrapperForClassification, MSPImplementation, MSPImplementationForClassification, Timem
@@ -21,8 +21,8 @@ batch_size = 8
 chunk_size = 5
 overlap = 0.5
 num_workers = 7
-# checkpoint_name = "facebook/wav2vec2-base-960h"
-checkpoint_name = "facebook/wav2vec2-xls-r-300m"
+checkpoint_name = "facebook/wav2vec2-base-960h"
+# checkpoint_name = "facebook/wav2vec2-xls-r-300m"
 train_mode = True
 lr = 1e-5
 epochs = 30 #10
@@ -50,7 +50,7 @@ def get_loaders(batch_size: int, chunk_size: int, overlap: float, num_workers: i
     loader_test = DataLoader(
         dataset=dataset_test,
         batch_size=batch_size,
-        shuffle=False,
+        shuffle=True,
         num_workers=num_workers,
         collate_fn=dataset_test.seqCollate,
     )
@@ -58,7 +58,7 @@ def get_loaders(batch_size: int, chunk_size: int, overlap: float, num_workers: i
     loader_dev = DataLoader(
         dataset=dataset_dev,
         batch_size=batch_size,
-        shuffle=False,
+        shuffle=True,
         num_workers=num_workers,
         collate_fn=dataset_dev.seqCollate,
     )

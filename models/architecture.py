@@ -203,7 +203,8 @@ class Wav2vec2ModelWrapperForClassification(nn.Module):
         self.projector = nn.Linear(self.wav2vec2.config.hidden_size, self.wav2vec2.config.classifier_proj_size)
         self.batch_norm = nn.BatchNorm1d(self.wav2vec2.config.classifier_proj_size, eps=1e-2)
         self.dropout2 = nn.Dropout(p=0.3)
-        self.linear_layer = nn.Linear(self.wav2vec2.config.classifier_proj_size, self.n_classes)
+        # self.linear_layer = nn.Linear(self.wav2vec2.config.classifier_proj_size, self.n_classes)
+        self.linear_layer = nn.Linear(self.wav2vec2.config.classifier_proj_size, 1) # regression
         self.train_mode = train_mode
         self.wav2vec2.training = train_mode
         self.wav2vec2.init_weights()
@@ -264,7 +265,7 @@ class Wav2vec2ModelWrapperForClassification(nn.Module):
             attention_mask = None
 
             extract_features = self.wav2vec2.feature_extractor(input_values)
-            pca_features = []
+            
 
             extract_features = extract_features.transpose(1, 2)
 
@@ -316,9 +317,10 @@ class MSPImplementationForClassification(L.LightningModule):
         self.save_hyperparameters(ignore=["model"]) # skip model parameters to save to log :|
         self.train_mode = train_mode
         self.entropy_loss = torch.nn.CrossEntropyLoss() #TODO : <--- init weigths
-        self.train_acc = Accuracy(task="multiclass", num_classes=self.model.n_classes)
-        self.val_acc = Accuracy(task="multiclass", num_classes=self.model.n_classes)
-        self.test_acc = Accuracy(task="multiclass", num_classes=self.model.n_classes)
+        self.mse_loss = torch.nn.MSELoss()
+        self.train_acc = MeanSquaredError() #Accuracy(task="multiclass", num_classes=self.model.n_classes)
+        self.val_acc = MeanSquaredError() #Accuracy(task="multiclass", num_classes=self.model.n_classes)
+        self.test_acc = MeanSquaredError() #Accuracy(task="multiclass", num_classes=self.model.n_classes)
         self.y_hats = []
         self.y_trues = []
         self.last_running = 'None'
@@ -329,7 +331,8 @@ class MSPImplementationForClassification(L.LightningModule):
     def _iter_step(self, batch):
         inputs, true_labels = batch
         logits, hidden_states = self(inputs, true_labels)
-        loss = self.entropy_loss(logits, true_labels)
+        # loss = self.entropy_loss(logits, true_labels)
+        loss = self.mse_loss(logits.view(-1), F.normalize(true_labels, dim=0))
         return loss, true_labels, logits
 
     def training_step(self, batch, batch_idx):
@@ -337,8 +340,10 @@ class MSPImplementationForClassification(L.LightningModule):
         self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
         #Accuracy
         if batch_idx % 50 == 0:
-            logits = F.softmax(logits)
-            y_hat = torch.argmax(logits, axis=1)
+            # logits = F.softmax(logits)
+            # y_hat = torch.argmax(logits, axis=1)
+            y_hat = logits.view(-1)
+            true_labels = F.normalize(true_labels, dim=0)
             print("y_hat      :", y_hat)
             print("true_labels:", true_labels)
             print("\n")
@@ -347,13 +352,13 @@ class MSPImplementationForClassification(L.LightningModule):
                 "train_acc", acc.item(), on_step=True, on_epoch=True, prog_bar=True
             )
 
-        if self.last_running == 'validation_step':
-            ov_acc = self.val_acc(torch.tensor(self.y_hats, device=logits.device), torch.tensor(self.y_trues, device=logits.device))
-            cm = conf_matrix(self.y_hats, self.y_trues, terms, self.current_epoch, ov_acc)
-            tensorboard = self.logger.experiment
-            tensorboard.add_figure('confusion_matrix', cm.get_figure(), self.current_epoch)
-            self.y_hats = []
-            self.y_trues = []
+        # if self.last_running == 'validation_step':
+        #     ov_acc = self.val_acc(torch.tensor(self.y_hats, device=logits.device), torch.tensor(self.y_trues, device=logits.device))
+        #     cm = conf_matrix(self.y_hats, self.y_trues, terms, self.current_epoch, ov_acc)
+        #     tensorboard = self.logger.experiment
+        #     tensorboard.add_figure('confusion_matrix', cm.get_figure(), self.current_epoch)
+        #     self.y_hats = []
+        #     self.y_trues = []
 
         self.last_running = 'training_step'
 
@@ -372,7 +377,7 @@ class MSPImplementationForClassification(L.LightningModule):
         #Accuracy
         logits = F.softmax(logits)
         y_hat = torch.argmax(logits, axis=1)
-        print("Validation ")
+        print("Validation ")  #TODO talvez se requiera buscar por v,a,d y ver que tan cercanos son el 1ro del 2do para considerarlo como valido.
         print("y_hat      :", [terms[y.item()] for y in y_hat])
         print("true_labels:", [terms[y.item()] for y in true_labels])
         print("\n")
