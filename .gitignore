@@ -30,3 +30,4 @@ notebooks/isolated/
 logs/
 audiosegments.tar.gz
 /audiosegments.tar.gz
+.DS_Store

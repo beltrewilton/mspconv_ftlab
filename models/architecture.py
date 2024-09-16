@@ -339,7 +339,7 @@ class MSPImplementationForClassification(L.LightningModule):
         loss, true_labels, logits = self._iter_step(batch)
         self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
         #Accuracy
-        if batch_idx % 50 == 0:
+        if batch_idx % 100 == 0:
             # logits = F.softmax(logits)
             # y_hat = torch.argmax(logits, axis=1)
             y_hat = logits.view(-1)
@@ -375,8 +375,10 @@ class MSPImplementationForClassification(L.LightningModule):
         loss, true_labels, logits = self._iter_step(batch)
         self.log("val_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
         #Accuracy
-        logits = F.softmax(logits)
-        y_hat = torch.argmax(logits, axis=1)
+        # logits = F.softmax(logits)
+        # y_hat = torch.argmax(logits, axis=1)
+        y_hat = logits.view(-1)
+        true_labels = F.normalize(true_labels, dim=0)
         print("Validation ")  #TODO talvez se requiera buscar por v,a,d y ver que tan cercanos son el 1ro del 2do para considerarlo como valido.
         print("y_hat      :", [terms[y.item()] for y in y_hat])
         print("true_labels:", [terms[y.item()] for y in true_labels])
@@ -395,8 +397,10 @@ class MSPImplementationForClassification(L.LightningModule):
         loss, true_labels, logits = self._iter_step(batch)
         self.log("test_loss", loss)
         #Accuracy
-        logits = F.softmax(logits)
-        y_hat = torch.argmax(logits, axis=1)
+        # logits = F.softmax(logits)
+        # y_hat = torch.argmax(logits, axis=1)
+        y_hat = logits.view(-1)
+        true_labels = F.normalize(true_labels, dim=0)
         acc = self.test_acc(y_hat, true_labels)
         self.log("test_acc", acc.item())
 
