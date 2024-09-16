@@ -1,5 +1,5 @@
 import inspect
-from typing import Any
+from typing import Any, List
 import time
 import numpy as np
 import torch
@@ -38,6 +38,34 @@ beam_search_decoder = ctc_decoder(
     lm_weight=LM_WEIGHT,
     word_score=WORD_SCORE,
 )
+
+
+
+class CCCLoss(nn.Module):
+    def __init__(self):
+        super(CCCLoss, self).__init__()
+
+    def forward(self, y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.tensor:
+        # Means of the true and predicted values
+        mean_true = torch.mean(y_true)
+        mean_pred = torch.mean(y_pred)
+
+        # Variances of the true and predicted values
+        var_true = torch.var(y_true, unbiased=False)
+        var_pred = torch.var(y_pred, unbiased=False)
+
+        # Covariance between the true and predicted values
+        cov_true_pred = torch.mean((y_true - mean_true) * (y_pred - mean_pred))
+
+        # CCC formula
+        ccc_numerator = 2 * cov_true_pred
+        ccc_denominator = var_true + var_pred + (mean_true - mean_pred) ** 2
+        ccc = ccc_numerator / (ccc_denominator + 1e-8)  # Small epsilon for numerical stability
+
+        # CCC Loss: we want to minimize 1 - CCC
+        ccc_loss = 1 - ccc
+
+        return ccc_loss
 
 
 # utileria para medir tiempo.
@@ -317,7 +345,8 @@ class MSPImplementationForClassification(L.LightningModule):
         self.save_hyperparameters(ignore=["model"]) # skip model parameters to save to log :|
         self.train_mode = train_mode
         self.entropy_loss = torch.nn.CrossEntropyLoss() #TODO : <--- init weigths
-        self.mse_loss = torch.nn.MSELoss()
+        # self.mse_loss = torch.nn.MSELoss()
+        self.ccc_loss = CCCLoss()
         self.train_acc = ConcordanceCorrCoef() #Accuracy(task="multiclass", num_classes=self.model.n_classes)
         self.val_acc = ConcordanceCorrCoef() #Accuracy(task="multiclass", num_classes=self.model.n_classes)
         self.test_acc = ConcordanceCorrCoef() #Accuracy(task="multiclass", num_classes=self.model.n_classes)
@@ -332,7 +361,7 @@ class MSPImplementationForClassification(L.LightningModule):
         inputs, true_labels = batch
         logits, hidden_states = self(inputs, true_labels)
         # loss = self.entropy_loss(logits, true_labels)
-        loss = self.mse_loss(logits.view(-1), true_labels)
+        loss = self.ccc_loss(logits.view(-1), true_labels)
         return loss, true_labels, logits
 
     def training_step(self, batch, batch_idx):
