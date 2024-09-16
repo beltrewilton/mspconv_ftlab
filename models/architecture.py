@@ -8,7 +8,7 @@ import torch.nn.functional as F
 from torchaudio.models.decoder import ctc_decoder
 import lightning as L
 from lightning.pytorch.utilities.types import OptimizerLRScheduler
-from torchmetrics.regression import MeanSquaredError
+from torchmetrics.regression import MeanSquaredError, ConcordanceCorrCoef
 from torchmetrics.text import CharErrorRate
 from torchmetrics import Accuracy
 from transformers import Wav2Vec2ForPreTraining
@@ -318,9 +318,9 @@ class MSPImplementationForClassification(L.LightningModule):
         self.train_mode = train_mode
         self.entropy_loss = torch.nn.CrossEntropyLoss() #TODO : <--- init weigths
         self.mse_loss = torch.nn.MSELoss()
-        self.train_acc = MeanSquaredError() #Accuracy(task="multiclass", num_classes=self.model.n_classes)
-        self.val_acc = MeanSquaredError() #Accuracy(task="multiclass", num_classes=self.model.n_classes)
-        self.test_acc = MeanSquaredError() #Accuracy(task="multiclass", num_classes=self.model.n_classes)
+        self.train_acc = ConcordanceCorrCoef() #Accuracy(task="multiclass", num_classes=self.model.n_classes)
+        self.val_acc = ConcordanceCorrCoef() #Accuracy(task="multiclass", num_classes=self.model.n_classes)
+        self.test_acc = ConcordanceCorrCoef() #Accuracy(task="multiclass", num_classes=self.model.n_classes)
         self.y_hats = []
         self.y_trues = []
         self.last_running = 'None'
@@ -332,18 +332,17 @@ class MSPImplementationForClassification(L.LightningModule):
         inputs, true_labels = batch
         logits, hidden_states = self(inputs, true_labels)
         # loss = self.entropy_loss(logits, true_labels)
-        loss = self.mse_loss(logits.view(-1), F.normalize(true_labels, dim=0))
+        loss = self.mse_loss(logits.view(-1), true_labels)
         return loss, true_labels, logits
 
     def training_step(self, batch, batch_idx):
         loss, true_labels, logits = self._iter_step(batch)
         self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
         #Accuracy
-        if batch_idx % 100 == 0:
+        if batch_idx % 50 == 0:
             # logits = F.softmax(logits)
             # y_hat = torch.argmax(logits, axis=1)
             y_hat = logits.view(-1)
-            true_labels = F.normalize(true_labels, dim=0)
             print("y_hat      :", y_hat)
             print("true_labels:", true_labels)
             print("\n")
@@ -378,7 +377,6 @@ class MSPImplementationForClassification(L.LightningModule):
         # logits = F.softmax(logits)
         # y_hat = torch.argmax(logits, axis=1)
         y_hat = logits.view(-1)
-        true_labels = F.normalize(true_labels, dim=0)
         print("Validation ")  #TODO talvez se requiera buscar por v,a,d y ver que tan cercanos son el 1ro del 2do para considerarlo como valido.
         # print("y_hat      :", [terms[y.item()] for y in y_hat])
         # print("true_labels:", [terms[y.item()] for y in true_labels])
@@ -403,7 +401,6 @@ class MSPImplementationForClassification(L.LightningModule):
         # logits = F.softmax(logits)
         # y_hat = torch.argmax(logits, axis=1)
         y_hat = logits.view(-1)
-        true_labels = F.normalize(true_labels, dim=0)
         acc = self.test_acc(y_hat, true_labels)
         self.log("test_acc", acc.item())
 
