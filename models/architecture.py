@@ -380,8 +380,11 @@ class MSPImplementationForClassification(L.LightningModule):
         y_hat = logits.view(-1)
         true_labels = F.normalize(true_labels, dim=0)
         print("Validation ")  #TODO talvez se requiera buscar por v,a,d y ver que tan cercanos son el 1ro del 2do para considerarlo como valido.
-        print("y_hat      :", [terms[y.item()] for y in y_hat])
-        print("true_labels:", [terms[y.item()] for y in true_labels])
+        # print("y_hat      :", [terms[y.item()] for y in y_hat])
+        # print("true_labels:", [terms[y.item()] for y in true_labels])
+        # print("\n")
+        print("y_hat      :", y_hat)
+        print("true_labels:", true_labels)
         print("\n")
         acc = self.val_acc(y_hat, true_labels)
         self.log(
