@@ -73,10 +73,10 @@ class CCCLoss(torch.nn.Module):
         """
         y_true_mean = torch.mean(y_true)
         y_hat_mean = torch.mean(y_hat)
-        y_true_var = torch.var(y_true)
-        y_hat_var = torch.var(y_hat)
-        y_true_std = torch.std(y_true)
-        y_hat_std = torch.std(y_hat)
+        y_true_var = torch.var(y_true, unbiased=False) #  Bessel's correction, N - 1
+        y_hat_var = torch.var(y_hat, unbiased=False) #  Bessel's correction, N - 1
+        y_true_std = torch.std(y_true, unbiased=False) #  Bessel's correction, N - 1
+        y_hat_std = torch.std(y_hat, unbiased=False) #  Bessel's correction, N - 1
         vx = y_true - torch.mean(y_true)
         vy = y_hat - torch.mean(y_hat)
         pcc = torch.sum(vx * vy) / (
