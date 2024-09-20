@@ -72,7 +72,7 @@ class MSPDataset(Dataset):
         if self.verbose:
             print(f"idx:{idx} {self.input_features['inputs'][idx]}")
         part = f"{AUDIO_SEGMENTS}/{self.input_features['inputs'][idx]}" # TODO: to device????
-        # print(f"{self.input_features['inputs'][idx]}")
+        print(f"{self.input_features['inputs'][idx]}")
         waveform, _ = torchaudio.load(str(part), normalize=True)
         waveform = waveform.squeeze()
         label = self.input_features['labels'][idx]

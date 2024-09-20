@@ -84,7 +84,7 @@ class MSPDataProcessor:
         self.overlap = overlap
         self.df_reference = None
         self.split = split
-        self.input_features_path = f"class_input_features_{self.split.lower()}_robust_20240915.pkl"
+        self.input_features_path = f"class_input_features_{self.split.lower()}_robust_20240920.pkl"
         self.verbose = verbose
         self.SAMPLE_RATE = 16_000
         self.TEMPERATURE_DATAPOINT = .5
@@ -240,7 +240,8 @@ class MSPDataProcessor:
 
 
         # llama a silero y preguntale por los cuts de esta parte de audio
-        cuts = self.silero_cut(f"{AUDIO_PARTS}/{audio_name}")
+        # cuts = self.silero_cut(f"{AUDIO_PARTS}/{audio_name}")
+        cuts = self.uniform_cut(f"{AUDIO_PARTS}/{audio_name}", c=1)
 
 
         # iterar por cuts .....
@@ -270,7 +271,7 @@ class MSPDataProcessor:
                 # M = 1.0 # cada 1 seg con un M_overlap
                 # M = 0.1 # timit rules!
                 # M_overlap = 0.0025
-                # for j in np.arange(v, math.ceil(m), M):
+                # for j in np.arange(v, math.ceil(10), M): # c=10
                 #     mwa = wa[(wa['Time'] >= (j - M_overlap)) & (wa['Time'] < (j + M + M_overlap))]
                 #     if len(mwa) == 0:
                 #         continue
@@ -308,6 +309,12 @@ class MSPDataProcessor:
             chunked_data_points[key] = data_points
 
         return chunked_data_points
+    
+    def uniform_cut(self, mps_wave: str, c: int = 3) -> dict:
+        wave, sr = torchaudio.load(mps_wave, normalize=True)
+        T = round(wave.shape[1] / sr)
+        i = 0
+        return [{'start': x, 'end': x + c} for x in range(i, T, c)]
 
     def silero_cut(self, msp_wave: str, CUT_NEAR: int = 3, SAMPLING_RATE: int = 16_000, silence_threshold: float = 0.100, length: int = 6) -> dict:
         torch.set_num_threads(1)
